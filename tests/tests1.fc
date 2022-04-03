@@ -10,14 +10,14 @@
 ;;        c7 tuple / null
 ;;        gas limit integer / null
 
-[int, tuple, cell, tuple, int] test_example_data() method_id(0) {
+[int, tuple, cell, tuple, int] t1_recv_internal_data() method_id(0) {
     ;; Funtion to run (recv_internal)
     int function_selector = 0;
 
     ;; Example contract message body
     cell message = begin_cell()     ;; external message body
-            .store_uint(10, 32)           ;; value to add
-            .end_cell();
+        .store_uint(10, 32)         ;; value to add
+        .end_cell();
 
     tuple stack = unsafe_tuple([message.begin_parse()]); ;; stack that will be passed to function
 
@@ -27,6 +27,7 @@
 
     return [function_selector, stack, data, get_c7(), null()];
 }
+
 
 
 ;; After test data function
@@ -40,20 +41,7 @@
 ;; By default test is passed
 ;; You can use throw_if to fail test
 
-_ test_example(int exit_code, cell data, tuple stack, cell actions, int gas) method_id(1) {
-    throw_if(100, exit_code != 0);
-
-    int found = false;
-
-    if (exit_code == 0) {
-        found = true;
-    }
-    dump_stack();
-;;    throw_if(101, ~ found);
-    throw_if(102, gas > 1000000);
-}
-{-
-_ test_example(int exit_code, cell data, tuple stack, cell actions, int gas) method_id(1) {
+_ t1_recv_internal(int exit_code, cell data, tuple stack, cell actions, int gas) method_id(1) {
     throw_if(100, exit_code != 0); ;; test need to be passed
 
     var ds = data.begin_parse();
@@ -61,28 +49,32 @@ _ test_example(int exit_code, cell data, tuple stack, cell actions, int gas) met
     throw_if(101, ds~load_uint(64) != 10); ;; check if counter has been changed
     throw_if(102, gas > 1000000); ;; check if gas usage is not so big
 }
--}
+
 
 ;;
 ;;   GET method test
 ;;
 
-[int, tuple, cell, tuple, int] test_get_total_data() method_id(2) {
+[int, tuple, cell, tuple, int] t1_get_total_data() method_id(2) {
     int function_selector = 128253; ;; funtion to run (128253 is get_total, check contract.fif)
+    tuple stack = unsafe_tuple([]); ;; stack for function
+
     cell data = begin_cell()             ;; initial data
         .store_uint(10, 64)               ;; counter
         .end_cell();
 
-    return [function_selector, unsafe_tuple([20]), data, get_c7(), null()];
+    return [function_selector, stack, data, get_c7(), null()];
 }
 
-_ test_get_total(int exit_code, cell data, tuple stack, cell actions, int gas) method_id(3) {
-    throw_if(103, exit_code != 0); ;; test need to be passed
-    dump_stack();
+_ t1_get_total(int exit_code, cell data, tuple stack, cell actions, int gas) method_id(3) {
+    throw_if(100, exit_code != 0); ;; test need to be passed
     int counter = first(stack); ;; get answer from get method
-    slice cs = second(stack);
-    int t = cs~load_uint(32);
-    throw_if(104, counter != 10); ;; test if answer is 10 as we set
-    throw_if(105, t != 20);
+    throw_if(101, counter != 10); ;; test if answer is 10 as we set
 }
 
+
+
+{-
+INFO: Test [t1_recv_internal] status: [SUCCESS] Gas used: [1243]
+INFO: Test [t1_get_total] status: [SUCCESS] Gas used: [479]
+-}

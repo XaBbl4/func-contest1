@@ -9,3 +9,9 @@ task2:
     - func/2.fc
   tests:
     - tests/tests2.fc
+
+task3:
+  func:
+    - func/3.fc
+  tests:
+    - tests/tests3.fc

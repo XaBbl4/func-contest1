@@ -1,0 +1,301 @@
+int equal_slices (slice a, slice b) asm "SDEQ";
+
+;; Each test function must specify method_id
+;; Test functions method_id need to started from 0
+
+;; Each test functions must to be in pairs
+;; First funtion expect nothing in arguments
+;; But need to return:
+;;        function selector - which function to test, e.g. 0 for recv_internal, -1 recv_external, 85143 for seqno, and so on
+;;        tuple - stack values needed to be passed to function in tuple
+;;        c4 cell - start data of smart contract
+;;        c7 tuple / null
+;;        gas limit integer / null
+
+[int, tuple, cell, tuple, int] t3_op1_data() method_id(0) {
+    ;; Funtion to run (recv_internal)
+    int function_selector = 0;
+
+    ;; Example contract message body
+    cell msg_full = begin_cell()
+        .store_uint(4, 4) ;; flags
+        .store_slice(my_address())
+        .end_cell();
+
+    cell msg_body = begin_cell()
+        .store_uint(1, 32)
+        .store_uint(128, 64)
+        .store_slice(my_address())
+        .end_cell();
+
+    tuple stack = unsafe_tuple([0, 0, msg_full, msg_body.begin_parse()]);
+
+    ;; initial data of contract
+    cell data = begin_cell()
+        .store_slice(my_address())
+        .store_int(0, 2)
+        .end_cell();
+
+    return [function_selector, stack, data, get_c7(), null()];
+}
+
+
+
+;; After test data function
+;; We need to define test funtion
+;; It will accept:
+;;        exit code - exit code of runvm, here you can check errors / not
+;;        c4 cell - data of smart contract after runvm invokes
+;;        tuple - stack values of smart contract
+;;        c5 cell - here you can check all outcoming messages
+;;        gas - gas that was used
+;; By default test is passed
+;; You can use throw_if to fail test
+
+_ t3_op1(int exit_code, cell data, tuple stack, cell actions, int gas) method_id(1) {
+    throw_if(100, exit_code != 0); ;; test need to be passed
+
+    var ds = data.begin_parse();
+    
+    var manager_address = ds~load_msg_addr();
+    var memorized_address = ds~load_msg_addr();
+
+    ;; Check memorized_address via parse_std_addr
+    ;;var (mem_wc, mem_addr) = memorized_address.parse_std_addr();
+    ;;var (my_wc, my_addr) = my_address().parse_std_addr();
+    ;;throw_if(101, mem_addr != my_addr);
+
+    ;; Check memorized_address is my_address
+    throw_if(101, ~ equal_slices(memorized_address, my_address()));
+    ;; Check actions is empty
+    throw_if(102, actions.cell_depth() != 0);
+    throw_if(103, gas > 1000000); ;; check if gas usage is not so big
+}
+
+
+
+[int, tuple, cell, tuple, int] t3_op2_data() method_id(2) {
+    ;; Funtion to run (recv_internal)
+    int function_selector = 0;
+
+    ;; Example contract message body
+    cell msg_full = begin_cell()
+        .store_int(0, 4) ;; flags
+        .store_slice(my_address())
+        .end_cell();
+
+    cell msg_body = begin_cell()
+        .store_uint(2, 32)          ;; op
+        .store_uint(64, 64)         ;; query_id
+        .end_cell();
+
+    tuple stack = unsafe_tuple([0, 0, msg_full, msg_body.begin_parse()]);
+
+    ;; initial data of contract
+    cell data = begin_cell()
+        .store_slice(my_address())
+        .store_slice(my_address())
+        .end_cell();
+
+    return [function_selector, stack, data, get_c7(), null()];
+}
+
+_ t3_op2(int exit_code, cell data, tuple stack, cell actions, int gas) method_id(3) {
+    throw_if(100, exit_code != 0); ;; test need to be passed
+
+    var ds = data.begin_parse();
+    
+    var manager_address = ds~load_msg_addr();
+    var memorized_address = ds~load_msg_addr();
+
+    ;; Check memorized_address is my_address()
+    throw_if(101, ~ equal_slices(memorized_address, my_address()));
+
+{-
+out_list_empty$_ = OutList 0;
+out_list$_ {n:#} prev:^(OutList n) action:OutAction = OutList (n + 1);
+action_send_msg#0ec3c86d mode:(## 8) out_msg:^(MessageRelaxed Any) = OutAction;
+action_set_code#ad4de08e new_code:^Cell = OutAction;
+action_reserve_currency#36e6b809 mode:(## 8) currency:CurrencyCollection = OutAction;
+libref_hash$0 lib_hash:bits256 = LibRef;
+libref_ref$1 library:^Cell = LibRef;
+action_change_library#26fa1dd4 mode:(## 7) { mode <= 2 } libref:LibRef = OutAction;
+
+out_list_node$_ prev:^Cell action:OutAction = OutListNode;
+-}
+
+    ;; Actions is not empty
+    throw_if(102, actions.cell_depth() == 0);
+    var as = actions.begin_parse();
+    var (n, mode) = (as~load_uint(32), as~load_uint(8)); ;; count and m
+    ;;dump_stack();
+    throw_if(103, n != 0x0ec3c86d);
+    throw_if(104, mode != 64);
+
+    cell msg1 = as~load_ref();
+    cell msg2 = as~load_ref();
+    ;;dump_stack();
+    slice ms1 = msg1.begin_parse();
+    slice ms2 = msg2.begin_parse();
+    ;;dump_stack();
+    var cnt1 = ms1.slice_bits();
+    var cnt2 = ms2.slice_bits();
+    ;;dump_stack();
+    throw_if(105, cnt1 != 0);
+    throw_if(106, cnt2 != 1014);
+
+    var flags = ms2~load_uint(4);
+    var owner_addr = ms2~load_uint(2);
+    var sender_addr = ms2~load_msg_addr();
+    ;;dump_stack();
+    throw_if(107, flags != 4);
+    throw_if(108, owner_addr != 0);
+    throw_if(109, ~ equal_slices(sender_addr, my_address()));
+    
+    var coins = ms2~load_coins();
+    var reserved = ms2~load_uint(1 + 4 + 4 + 64 + 32 + 1 + 1);
+    var op = ms2~load_uint(32);
+    var query_id = ms2~load_uint(64);
+    var manager_addr = ms2~load_msg_addr();
+    var mem_addr = ms2~load_msg_addr();
+    ;;dump_stack();
+    throw_if(110, coins != 0);
+    throw_if(111, reserved != 0);
+    throw_if(112, op != 3);
+    throw_if(113, query_id != 64);
+    throw_if(114, ~ equal_slices(manager_addr, my_address()));
+    throw_if(115, ~ equal_slices(mem_addr, my_address()));
+
+    ;; Check actions contain out message
+    throw_if(116, gas > 1000000); ;; check if gas usage is not so big
+}
+
+
+
+[int, tuple, cell, tuple, int] t3_op2_empty_data() method_id(4) {
+    ;; Funtion to run (recv_internal)
+    int function_selector = 0;
+
+    ;; Example contract message body
+    cell msg_full = begin_cell()
+        .store_int(0, 4) ;; flags
+        .store_slice(my_address())
+        .end_cell();
+
+    cell msg_body = begin_cell()
+        .store_uint(2, 32)
+        .store_uint(128, 64)
+        .end_cell();
+
+    tuple stack = unsafe_tuple([0, 0, msg_full, msg_body.begin_parse()]);
+
+    ;; initial data of contract
+    cell data = begin_cell()
+        .store_slice(my_address())
+        .store_int(0, 2)
+        .end_cell();
+
+    return [function_selector, stack, data, get_c7(), null()];
+}
+
+_ t3_op2_empty(int exit_code, cell data, tuple stack, cell actions, int gas) method_id(5) {
+    throw_if(100, exit_code != 0); ;; test need to be passed
+
+    var ds = data.begin_parse();
+    
+    var manager_address = ds~load_msg_addr();
+    var memorized_address = ds~load_msg_addr();
+    var check_mem_addr = begin_cell().store_uint(0, 2).end_cell().begin_parse();
+
+    ;; Check memorized_address is empty
+    throw_if(101, ~ equal_slices(memorized_address, check_mem_addr));
+
+    ;; Actions is not empty
+    throw_if(102, actions.cell_depth() == 0);
+    var as = actions.begin_parse();
+    var (n, mode) = (as~load_uint(32), as~load_uint(8));
+    ;;dump_stack();
+    throw_if(103, n != 0x0ec3c86d);
+    throw_if(104, mode != 64);
+
+    var (_, ref) = (as~load_ref(), as~load_ref());
+    slice ms = ref.begin_parse();
+    ;;dump_stack();
+    throw_if(105, ms.slice_bits() != 749);
+
+    var flags = ms~load_uint(4);
+    var owner_addr = ms~load_uint(2);
+    var sender_addr = ms~load_msg_addr();
+    ;;dump_stack();
+    throw_if(107, flags != 4);
+    throw_if(108, owner_addr != 0);
+    throw_if(109, ~ equal_slices(sender_addr, my_address()));
+    
+    var coins = ms~load_coins();
+    var reserved = ms~load_uint(1 + 4 + 4 + 64 + 32 + 1 + 1);
+    var op = ms~load_uint(32);
+    var query_id = ms~load_uint(64);
+    var manager_addr = ms~load_msg_addr();
+    var mem_addr = ms~load_msg_addr();
+    ;;dump_stack();
+    throw_if(110, coins != 0);
+    throw_if(111, reserved != 0);
+    throw_if(112, op != 3);
+    throw_if(113, query_id != 128);
+    throw_if(114, ~ equal_slices(manager_addr, my_address()));
+    throw_if(115, ~ equal_slices(mem_addr, check_mem_addr));
+
+    ;; Check actions contain out message
+    throw_if(116, gas > 1000000); ;; check if gas usage is not so big
+}
+
+
+
+[int, tuple, cell, tuple, int] t3_throw_data() method_id(6) {
+    ;; Funtion to run (recv_internal)
+    int function_selector = 0;
+
+    ;; Example contract message body
+    cell msg_full = begin_cell()
+        .store_int(0, 4) ;; flags
+        .store_slice(my_address())
+        .end_cell();
+
+    cell msg_body = begin_cell()
+        .store_uint(64, 32)
+        .store_uint(128, 64)
+        .end_cell();
+
+    tuple stack = unsafe_tuple([0, 0, msg_full, msg_body.begin_parse()]);
+
+    ;; initial data of contract
+    cell data = begin_cell()
+        .store_slice(my_address())
+        .store_int(0, 2)
+        .end_cell();
+
+    return [function_selector, stack, data, get_c7(), null()];
+}
+
+_ t3_throw(int exit_code, cell data, tuple stack, cell actions, int gas) method_id(7) {
+    throw_if(100, exit_code != 63); ;; test need to be passed
+
+    var ds = data.begin_parse();
+    
+    var manager_address = ds~load_msg_addr();
+    var memorized_address = ds~load_msg_addr();
+
+    ;; Check memorized_address is empty
+    throw_if(101, ~ equal_slices(memorized_address, begin_cell().store_uint(0, 2).end_cell().begin_parse()));
+    ;;throw_if(102, actions.cell_depth() != 0);
+    throw_if(103, gas > 1000000); ;; check if gas usage is not so big
+}
+
+
+
+{-
+INFO: Test [t3_op1] status: [SUCCESS] Gas used: [1765]
+INFO: Test [t3_op2] status: [SUCCESS] Gas used: [2372]
+INFO: Test [t3_op2_empty] status: [SUCCESS] Gas used: [2372]
+INFO: Test [t3_throw] status: [SUCCESS] Gas used: [1132]
+-}

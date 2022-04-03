@@ -1,0 +1,184 @@
+;; Each test function must specify method_id
+;; Test functions method_id need to started from 0
+
+;; Each test functions must to be in pairs
+;; First funtion expect nothing in arguments
+;; But need to return:
+;;        function selector - which function to test, e.g. 0 for recv_internal, -1 recv_external, 85143 for seqno, and so on
+;;        tuple - stack values needed to be passed to function in tuple
+;;        c4 cell - start data of smart contract
+;;        c7 tuple / null
+;;        gas limit integer / null
+
+[int, tuple, cell, tuple, int] t5_init_data() method_id(0) {
+    int function_selector = 90427; ;; funtion to run (90427 is pack_data)
+    
+    ;; Example contract message body
+    int public_key1 = 0x27954a84e5329d47303740575ad34a7b5eca93a686768fc4e3661939db179338;
+    int public_key2 = 0x17dc8c126188f45b6d4bc3662c35ac2b800fd5eac772be813253baee0d9a9078;
+
+    tuple stack = unsafe_tuple([public_key1, public_key2]); ;; function stack
+
+    cell data = begin_cell().end_cell();
+
+    return [function_selector, stack, data, get_c7(), null()];
+}
+
+;; After test data function
+;; We need to define test funtion
+;; It will accept:
+;;        exit code - exit code of runvm, here you can check errors / not
+;;        c4 cell - data of smart contract after runvm invokes
+;;        tuple - stack values of smart contract
+;;        c5 cell - here you can check all outcoming messages
+;;        gas - gas that was used
+;; By default test is passed
+;; You can use throw_if to fail test
+_ t5_init(int exit_code, cell data, tuple stack, cell actions, int gas) method_id(1) {
+    throw_if(100, exit_code != 0); ;; test need to be passed
+    
+    ;;dump_stack();
+    slice cs = first(stack).begin_parse();
+    var spk1 = cs~load_uint(256);
+    var spk2 = cs~load_uint(256);
+
+    slice ds = data.begin_parse();
+    var dpk1 = ds~load_uint(256);
+    var dpk2 = ds~load_uint(256);
+
+    throw_if(101, (spk1 != dpk1) | (spk1 != 0x27954a84e5329d47303740575ad34a7b5eca93a686768fc4e3661939db179338));
+    throw_if(102, (spk2 != dpk2) | (spk2 != 0x17dc8c126188f45b6d4bc3662c35ac2b800fd5eac772be813253baee0d9a9078));
+}
+
+
+
+[int, tuple, cell, tuple, int] t5_send_1_data() method_id(2) {
+    ;; Funtion to run (recv_external)
+    int function_selector = -1;
+
+    int priv_key_1 = 0x239f2092ade534c52386513a896d301881c1bd12614fc232d00bf281e37932db;
+    int pub_key_1 = 0x27954a84e5329d47303740575ad34a7b5eca93a686768fc4e3661939db179338;
+
+    int priv_key_2 = 0xd064408cb9fb2b3db6f91aa69c193ebe7ec8ff57fc0519b966aa27abc10cfb48;
+    int pub_key_2 = 0x17dc8c126188f45b6d4bc3662c35ac2b800fd5eac772be813253baee0d9a9078;
+
+    cell msg_to_send = begin_cell()
+        .store_uint(0x10, 6)
+        .store_slice(my_address())
+        .store_coins(0)
+        .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
+        .store_uint(123, 32)
+        .end_cell();
+    ;;dump_stack();
+
+    cell request = begin_cell()     ;; request:^Request
+        .store_uint(1648859337, 32) ;;   valid_until (now())
+        .store_uint(64, 8)          ;;   mode
+        .store_ref(msg_to_send)     ;;   msg_to_send:^Cell (for send_raw_message)
+        .end_cell();
+    ;;dump_stack();
+
+    slice signature = begin_cell()
+        .store_uint(0x777c2997d26969ecf6744552f105bb8903ac580222329885455d0943042e434e, 256)
+        .store_uint(0xf1046b636344e1407461f928fbf14cffbbc99457a94dda5846112e1f488f7a0e, 256)
+        .end_cell().begin_parse();
+    ;;dump_stack();
+
+    slice msg_body = begin_cell()
+        .store_uint(pub_key_1, 256) ;; public_key
+        .store_slice(signature)     ;; signature
+        .store_ref(request)         ;; request
+    .end_cell().begin_parse();
+    ;;dump_stack();
+
+    return [function_selector, unsafe_tuple([msg_body]), get_prev_c4(), get_c7(), null()];
+}
+
+_ t5_send_1(int exit_code, cell data, tuple stack, cell actions, int gas) method_id(3) {
+    throw_if(exit_code, exit_code != 0); ;; test need to be passed
+
+{-
+    int priv_key_1 = 0x239f2092ade534c52386513a896d301881c1bd12614fc232d00bf281e37932db;
+    int pub_key_1 = 0x27954a84e5329d47303740575ad34a7b5eca93a686768fc4e3661939db179338;
+
+    slice sign_s = begin_cell()
+        ;;.store_uint(0x4631fca9912fcc6d1b7fc94a2114fdf23beec4cc31acfd3bc581363d76318845, 256)
+        ;;.store_uint(0x918765111249aa0024829b9d5eaf2870ded22f96ea8f84b1122d8816cfde290e, 256)
+        .store_uint(0x58d20477510782b7f15a166a257a2ce9f7eb6879d301026283d4a0955dca86b8, 256)
+        .store_uint(0xba3414edc7d3b861beeb387bb3e62301abed665f9b4ed854339f57cdc50c910f, 256)
+        .end_cell().begin_parse();
+    ;;var signature = sign_s~load_bits(512);
+    ;;dump_stack();
+
+    cell test_c = begin_cell()
+        .store_uint(0x54657374, 32)
+        .end_cell();
+    slice test_s = test_c.begin_parse();
+
+    ;;dump_stack();
+    ;;throw_unless(150, check_data_signature(test_s, sign_s, pub_key_1));
+    throw_unless(150, check_signature(cell_hash(test_c), sign_s, pub_key_1));
+    int hash_c = cell_hash(test_c);
+    int hash_s = slice_hash(test_s);
+    slice t = begin_cell().store_uint(hash_c, 256).end_cell().begin_parse();
+    ;;457a876813ab40760124d323ef84b7ae41c76ff976cd13f1b8e5f0ab0cbd4df7
+    ;;dump_stack();
+    throw_unless(151, t.slice_bits() > 0);
+-}
+
+    ;;var ds = data.begin_parse();
+
+    ;;throw_if(101, ds~load_uint(64) != 10);
+    throw_if(102, gas > 1000000); ;; check if gas usage is not so big
+}
+
+
+
+[int, tuple, cell, tuple, int] t5_send_2_data() method_id(4) {
+    ;; Funtion to run (recv_external)
+    int function_selector = -1;
+
+    int priv_key_1 = 0x239f2092ade534c52386513a896d301881c1bd12614fc232d00bf281e37932db;
+    int pub_key_1 = 0x27954a84e5329d47303740575ad34a7b5eca93a686768fc4e3661939db179338;
+
+    int priv_key_2 = 0xd064408cb9fb2b3db6f91aa69c193ebe7ec8ff57fc0519b966aa27abc10cfb48;
+    int pub_key_2 = 0x17dc8c126188f45b6d4bc3662c35ac2b800fd5eac772be813253baee0d9a9078;
+
+    cell msg_to_send = begin_cell()
+        .store_uint(0x10, 6)
+        .store_slice(my_address())
+        .store_coins(0)
+        .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
+        .store_uint(123, 32)
+        .end_cell();
+    ;;dump_stack();
+
+    cell request = begin_cell()     ;; request:^Request
+        .store_uint(1648859337, 32) ;;   valid_until (now())
+        .store_uint(64, 8)          ;;   mode
+        .store_ref(msg_to_send)     ;;   msg_to_send:^Cell (for send_raw_message)
+        .end_cell();
+    ;;dump_stack();
+
+    slice signature = begin_cell()
+        .store_uint(0x3ca84d25598f7353a44c9288dada340756ce523984a416cb3fd6243e70939e59, 256)
+        .store_uint(0x49dca6e03a46ee3883a4f9015c291637ff34cb2e70908d72a1d6f4a04dd84805, 256)
+        .end_cell().begin_parse();
+    ;;dump_stack();
+
+    slice msg_body = begin_cell()
+        .store_uint(pub_key_2, 256) ;; public_key
+        .store_slice(signature)     ;; signature
+        ;;.store_uint(6, 256)         ;; signature part 1
+        ;;.store_uint(7, 256)         ;; signature part 2
+        .store_ref(request)         ;; request
+    .end_cell().begin_parse();
+    ;;dump_stack();
+
+    return [function_selector, unsafe_tuple([msg_body]), get_prev_c4(), get_c7(), null()];
+}
+
+_ t5_send_2(int exit_code, cell data, tuple stack, cell actions, int gas) method_id(5) {
+    throw_if(exit_code, exit_code != 0); ;; test need to be passed
+    throw_if(102, gas > 1000000); ;; check if gas usage is not so big
+}

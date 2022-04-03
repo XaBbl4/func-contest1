@@ -21,3 +21,9 @@ task4:
     - func/4.fc
   tests:
     - tests/tests4.fc
+
+task5:
+  func:
+    - func/5.fc
+  tests:
+    - tests/tests5.fc

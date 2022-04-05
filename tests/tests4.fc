@@ -52,23 +52,20 @@ _ t4_add_entry_1(int exit_code, cell data, tuple stack, cell actions, int gas) m
 
     var ds = data.begin_parse();
     var data_dict = ds~load_dict();
-    var valid_until_dict = ds~load_dict();
 
     int found = false;
     int key = -1;
+    int cnt = 0;
     do {
         (key, slice data_cs, int f) = data_dict.udict_get_next?(256, key);
         if (f) {
-            ;;throw_if(101, key != 123);
+            cnt += 1;
 
+            int valid_until = data_cs~load_uint(64);
             int val = data_cs~load_uint(32);
+            ;;throw_if(103, valid_until != 666);
             ;;throw_if(102, val != 111);
 
-            (cell valid_until_c, _) = valid_until_dict.udict_get_ref?(256, key);
-            var valid_until_cs = valid_until_c.begin_parse();
-            int valid_until = valid_until_cs~load_uint(64);
-            ;;throw_if(103, valid_until != 666);
-            
             if ((key == 123) & (val == 111) & (valid_until == 666)) {
                 found = true;
             }
@@ -76,7 +73,7 @@ _ t4_add_entry_1(int exit_code, cell data, tuple stack, cell actions, int gas) m
     } until (~ f);
 
     throw_if(101, ~ found);
-    throw_if(102, gas > 1000000); ;; check if gas usage is not so big
+    throw_if(102, cnt != 1);
 }
 
 
@@ -113,22 +110,20 @@ _ t4_add_entry_2(int exit_code, cell data, tuple stack, cell actions, int gas) m
 
     int found = false;
     int key = -1;
+    int cnt = 0;
     do {
         (key, slice data_cs, int f) = data_dict.udict_get_next?(256, key);
         if (f) {
-            ;;throw_if(101, key != 2);
+            cnt += 1;
 
+            int valid_until = data_cs~load_uint(64);
             int val = 0;
             if (data_cs.slice_bits() >= 128) {
                val = data_cs~load_uint(128);
             }
+            ;;throw_if(103, valid_until > now());
             ;;throw_if(102, val != 3074474027002800811);
 
-            (cell valid_until_c, _) = valid_until_dict.udict_get_ref?(256, key);
-            var valid_until_cs = valid_until_c.begin_parse();
-            int valid_until = valid_until_cs~load_uint(64);
-            ;;throw_if(103, valid_until != 999);
-            
             if ((key == 2) & (val == 3074474027002800811) & (valid_until > now())) {
                 found = true;
             }
@@ -136,12 +131,67 @@ _ t4_add_entry_2(int exit_code, cell data, tuple stack, cell actions, int gas) m
     } until (~ f);
 
     throw_if(101, ~ found);
-    throw_if(102, gas > 1000000); ;; check if gas usage is not so big
+    throw_if(102, cnt != 2);
 }
 
 
 
-[int, tuple, cell, tuple, int] t4_add_entry_3_data() method_id(4) {
+[int, tuple, cell, tuple, int] t4_replace_entry_1_data() method_id(4) {
+    ;; Funtion to run (recv_internal)
+    int function_selector = 0;
+
+    ;; Example contract message body
+    cell msg_full = begin_cell()
+        .store_uint(4, 4) ;; flags
+        .store_slice(my_address())
+        .end_cell();
+
+    cell msg_body = begin_cell()
+        .store_uint(1, 32)      ;; op
+        .store_uint(64, 64)    ;; query_id
+        .store_uint(123, 256)   ;; key
+        .store_uint(now() + 30, 64)    ;; valid until unixtime
+        .store_uint(999, 32)    ;; value
+        .end_cell();
+
+    tuple stack = unsafe_tuple([0, 0, msg_full, msg_body.begin_parse()]); ;; stack that will be passed to function
+
+    return [function_selector, stack, get_prev_c4(), get_c7(), null()];
+}
+
+_ t4_replace_entry_1(int exit_code, cell data, tuple stack, cell actions, int gas) method_id(5) {
+    throw_if(100, exit_code != 0); ;; test need to be passed
+
+    var ds = data.begin_parse();
+    var data_dict = ds~load_dict();
+    var valid_until_dict = ds~load_dict();
+
+    int found = false;
+    int key = -1;
+    int cnt = 0;
+    do {
+        (key, slice data_cs, int f) = data_dict.udict_get_next?(256, key);
+        if (f) {
+            cnt += 1;
+
+            int valid_until = data_cs~load_uint(64);
+            int val = data_cs~load_uint(32);
+            ;;throw_if(103, valid_until != 666);
+            ;;throw_if(102, val != 999);
+
+            if ((key == 123) & (val == 999) & (valid_until == now() + 30)) {
+                found = true;
+            }
+        }
+    } until (~ f);
+
+    throw_if(101, ~ found);
+    throw_if(102, cnt != 2);
+}
+
+
+
+[int, tuple, cell, tuple, int] t4_add_entry_3_data() method_id(6) {
     ;; Funtion to run (recv_internal)
     int function_selector = 0;
 
@@ -155,7 +205,7 @@ _ t4_add_entry_2(int exit_code, cell data, tuple stack, cell actions, int gas) m
         .store_uint(1, 32)      ;; op
         .store_uint(254, 64)    ;; query_id
         .store_uint(321, 256)   ;; key
-        .store_uint(now() + 50, 64)    ;; valid until unixtime
+        .store_uint(50, 64)     ;; valid until unixtime
         .store_uint(145, 64)    ;; value
         .end_cell();
 
@@ -164,7 +214,7 @@ _ t4_add_entry_2(int exit_code, cell data, tuple stack, cell actions, int gas) m
     return [function_selector, stack, get_prev_c4(), get_c7(), null()];
 }
 
-_ t4_add_entry_3(int exit_code, cell data, tuple stack, cell actions, int gas) method_id(5) {
+_ t4_add_entry_3(int exit_code, cell data, tuple stack, cell actions, int gas) method_id(7) {
     throw_if(100, exit_code != 0); ;; test need to be passed
 
     var ds = data.begin_parse();
@@ -173,35 +223,33 @@ _ t4_add_entry_3(int exit_code, cell data, tuple stack, cell actions, int gas) m
 
     int found = false;
     int key = -1;
+    int cnt = 0;
     do {
         (key, slice data_cs, int f) = data_dict.udict_get_next?(256, key);
         if (f) {
-            ;;throw_if(101, key != 321);
+            cnt += 1;
 
+            int valid_until = data_cs~load_uint(64);
             int val = 0;
             if (data_cs.slice_bits() >= 64) {
-                val = data_cs~load_uint(64);
+               val = data_cs~load_uint(64);
             }
-            ;;throw_if(102, val != 145);
+            ;;throw_if(103, valid_until > now());
+            ;;throw_if(102, val != 3074474027002800811);
 
-            (cell valid_until_c, _) = valid_until_dict.udict_get_ref?(256, key);
-            var valid_until_cs = valid_until_c.begin_parse();
-            int valid_until = valid_until_cs~load_uint(64);
-            ;;throw_if(103, valid_until != 999);
-            
-            if ((key == 321) & (val == 145) & (valid_until > now())) {
+            if ((key == 321) & (val == 145) & (valid_until == 50)) {
                 found = true;
             }
         }
     } until (~ f);
 
     throw_if(101, ~ found);
-    throw_if(102, gas > 1000000); ;; check if gas usage is not so big
+    throw_if(102, cnt != 3); ;; check if gas usage is not so big
 }
 
 
 
-[int, tuple, cell, tuple, int] t4_remove_entry_data() method_id(6) {
+[int, tuple, cell, tuple, int] t4_remove_entry_data() method_id(8) {
     ;; Funtion to run (recv_internal)
     int function_selector = 0;
 
@@ -221,7 +269,7 @@ _ t4_add_entry_3(int exit_code, cell data, tuple stack, cell actions, int gas) m
     return [function_selector, stack, get_prev_c4(), get_c7(), null()];
 }
 
-_ t4_remove_entry(int exit_code, cell data, tuple stack, cell actions, int gas) method_id(7) {
+_ t4_remove_entry(int exit_code, cell data, tuple stack, cell actions, int gas) method_id(9) {
     throw_if(100, exit_code != 0); ;; test need to be passed
 
     var ds = data.begin_parse();
@@ -253,40 +301,6 @@ _ t4_remove_entry(int exit_code, cell data, tuple stack, cell actions, int gas) 
 
 
 
-[int, tuple, cell, tuple, int] t4_get_key_data() method_id(8) {
-    int key = 123;
-
-    int function_selector = 127977;         ;; funtion to run (127977 is get_key)
-    tuple stack = unsafe_tuple([key]);      ;; stack for function
-
-    cell data_dict = null();
-    cell valid_until_dict = null();
-
-    data_dict~udict_set(256, key, begin_cell().store_uint(10, 32).end_cell().begin_parse());
-    valid_until_dict~udict_set_ref(256, key, begin_cell().store_uint(11, 64).end_cell());
-
-    cell data = begin_cell()      ;; initial data
-        .store_dict(data_dict)
-        .store_dict(valid_until_dict)
-        .end_cell();
-
-    return [function_selector, stack, data, get_c7(), null()];
-}
-
-_ t4_get_key(int exit_code, cell data, tuple stack, cell actions, int gas) method_id(9) {
-    throw_if(100, exit_code != 0); ;; test need to be passed
-
-    int valid_until = first(stack);
-    slice ds = second(stack);
-    int data = ds~load_uint(32);
-
-    throw_if(101, valid_until != 11);
-    throw_if(102, data != 10);
-    throw_if(103, gas > 1000000); ;; check if gas usage is not so big
-} 
-
-
-
 [int, tuple, cell, tuple, int] t4_unknows_op_data() method_id(10) {
     ;; Funtion to run (recv_internal)
     int function_selector = 0;
@@ -304,10 +318,7 @@ _ t4_get_key(int exit_code, cell data, tuple stack, cell actions, int gas) metho
 
     tuple stack = unsafe_tuple([0, 0, msg_full, msg_body.begin_parse()]); ;; stack that will be passed to function
 
-    cell data = begin_cell()
-        .end_cell();
-
-    return [function_selector, stack, data, get_c7(), null()];
+    return [function_selector, stack, get_prev_c4(), get_c7(), null()];
 }
 
 _ t4_unknows_op(int exit_code, cell data, tuple stack, cell actions, int gas) method_id(11) {
@@ -317,11 +328,93 @@ _ t4_unknows_op(int exit_code, cell data, tuple stack, cell actions, int gas) me
 
 
 
+[int, tuple, cell, tuple, int] t4_get_key_data() method_id(12) {
+    int key = 123;
+
+    int function_selector = 127977;         ;; funtion to run (127977 is get_key)
+    tuple stack = unsafe_tuple([key]);      ;; stack for function
+
+    cell data_dict = null();
+    cell valid_until_dict = null();
+
+    data_dict~udict_set(256, key, begin_cell().store_uint(10, 32).end_cell().begin_parse());
+    valid_until_dict~udict_set_ref(256, key, begin_cell().store_uint(11, 64).end_cell());
+
+    {-cell data = begin_cell()      ;; initial data
+        .store_dict(data_dict)
+        .store_dict(valid_until_dict)
+        .end_cell();
+    -}
+
+    return [function_selector, stack, get_prev_c4(), get_c7(), null()];
+}
+
+_ t4_get_key(int exit_code, cell data, tuple stack, cell actions, int gas) method_id(13) {
+    throw_if(100, exit_code != 0); ;; test need to be passed
+
+    int valid_until = first(stack);
+    slice ds = second(stack);
+    int data = ds~load_uint(32);
+
+    throw_if(101, valid_until < now() + 25);
+    throw_if(102, data != 999);
+    throw_if(103, gas > 1000000); ;; check if gas usage is not so big
+} 
+
+
+
+[int, tuple, cell, tuple, int] t4_get_key_empty_data() method_id(14) {
+    int key = 123;
+
+    int function_selector = 127977;         ;; funtion to run (127977 is get_key)
+    tuple stack = unsafe_tuple([key]);      ;; stack for function
+
+    cell data = begin_cell()      ;; initial data
+        .end_cell();
+
+    return [function_selector, stack, data, get_c7(), null()];
+}
+
+_ t4_get_key_empty(int exit_code, cell data, tuple stack, cell actions, int gas) method_id(15) {
+    throw_if(exit_code, exit_code != 63); ;; test need to be passed
+}
+
+
+
+[int, tuple, cell, tuple, int] t4_get_unknown_key_data() method_id(16) {
+    int key = 123;
+
+    int function_selector = 127977;         ;; funtion to run (127977 is get_key)
+    tuple stack = unsafe_tuple([key + 1]);      ;; stack for function
+
+    cell data_dict = new_dict();
+    cell valid_until_dict = new_dict();
+
+    data_dict~udict_set(256, key, begin_cell().store_uint(10, 32).end_cell().begin_parse());
+    valid_until_dict~udict_set_ref(256, key, begin_cell().store_uint(11, 64).end_cell());
+
+    cell data = begin_cell()      ;; initial data
+        .store_dict(data_dict)
+        .store_dict(valid_until_dict)
+        .end_cell();
+
+    return [function_selector, stack, data, get_c7(), null()];
+}
+
+_ t4_get_unknown_key(int exit_code, cell data, tuple stack, cell actions, int gas) method_id(17) {
+    throw_if(exit_code, exit_code != 62); ;; test need to be passed
+}
+
+
+
 {-
-INFO: Test [t4_add_entry_1] status: [SUCCESS] Gas used: [3407]
-INFO: Test [t4_add_entry_2] status: [SUCCESS] Gas used: [5623]
-INFO: Test [t4_add_entry_3] status: [SUCCESS] Gas used: [5623]
-INFO: Test [t4_remove_entry] status: [SUCCESS] Gas used: [7469]
-INFO: Test [t4_get_key] status: [SUCCESS] Gas used: [1227]
-INFO: Test [t4_unknows_op] status: [SUCCESS] Gas used: [1023]
+INFO: Test [t4_add_entry_1] status: [SUCCESS] Gas used: [2009]
+INFO: Test [t4_add_entry_2] status: [SUCCESS] Gas used: [3117]
+INFO: Test [t4_replace_entry_1] status: [SUCCESS] Gas used: [2717]
+INFO: Test [t4_add_entry_3] status: [SUCCESS] Gas used: [3117]
+INFO: Test [t4_remove_entry] status: [SUCCESS] Gas used: [4388]
+INFO: Test [t4_unknows_op] status: [SUCCESS] Gas used: [1005]
+INFO: Test [t4_get_key] status: [SUCCESS] Gas used: [889]
+INFO: Test [t4_get_key_empty] status: [SUCCESS] Gas used: [550]
+INFO: Test [t4_get_unknown_key] status: [SUCCESS] Gas used: [852]
 -}

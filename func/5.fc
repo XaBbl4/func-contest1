@@ -157,7 +157,7 @@ cell pack_data(int public_key1, int public_key2) method_id {
     if (valid_until <= now()) {
       err_no = 61;
     }
-    if (valid_until > now() + 60) {
+    if (valid_until - now() > 60) {
       err_no = 60;
     }
 

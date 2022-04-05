@@ -76,8 +76,7 @@ int equal_slices (slice a, slice b) asm "SDEQ";
         .store_slice(memorized_address)
       .end_cell();
     send_raw_message(msg, 64);
-  }
-  else {
+  } else {
     if ((op == 1) & equal_slices(manager_address, sender_address)) {
       var query_address = in_msg_body~load_msg_addr();
 

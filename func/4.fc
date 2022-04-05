@@ -32,7 +32,7 @@ TASK 4 - HASHMAP STORAGE.
 
 
 ;; testable
-() recv_internal(int balance, int msg_value, cell in_msg_full, slice in_msg_body) {
+() recv_internal(slice in_msg_body) {
     int op = in_msg_body~load_uint(32);
     int query_id = in_msg_body~load_uint(64);
 

@@ -452,13 +452,13 @@ _ t4_get_unknown_key(int exit_code, cell data, tuple stack, cell actions, int ga
 
 
 {-
-INFO: Test [t4_add_entry_1] status: [SUCCESS] Gas used: [2009]
-INFO: Test [t4_add_entry_2] status: [SUCCESS] Gas used: [3117]
-INFO: Test [t4_replace_entry_1] status: [SUCCESS] Gas used: [2717]
-INFO: Test [t4_add_entry_3] status: [SUCCESS] Gas used: [3117]
-INFO: Test [t4_remove_entry] status: [SUCCESS] Gas used: [4388]
-INFO: Test [t4_unknows_op] status: [SUCCESS] Gas used: [1005]
-INFO: Test [t4_add_ref_entry] status: [SUCCESS] Gas used: [3117]
+INFO: Test [t4_add_entry_1] status: [SUCCESS] Gas used: [1983]
+INFO: Test [t4_add_entry_2] status: [SUCCESS] Gas used: [3091]
+INFO: Test [t4_replace_entry_1] status: [SUCCESS] Gas used: [2691]
+INFO: Test [t4_add_entry_3] status: [SUCCESS] Gas used: [3091]
+INFO: Test [t4_remove_entry] status: [SUCCESS] Gas used: [4362]
+INFO: Test [t4_unknows_op] status: [SUCCESS] Gas used: [979]
+INFO: Test [t4_add_ref_entry] status: [SUCCESS] Gas used: [3091]
 INFO: Test [t4_get_key] status: [SUCCESS] Gas used: [989]
 INFO: Test [t4_get_key_empty] status: [SUCCESS] Gas used: [550]
 INFO: Test [t4_get_unknown_key] status: [SUCCESS] Gas used: [852]

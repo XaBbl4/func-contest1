@@ -38,7 +38,7 @@ slice load_data () {
 -}
 
 ;; testable
-() recv_internal (int balance, int msg_value, cell in_msg_full, slice in_msg_body) {
+() recv_internal (cell in_msg_full, slice in_msg_body) {
   ;;(slice sender_address, _) = parse_sender_address(in_msg_full);
   var cs = in_msg_full.begin_parse();
   var flags = cs~load_uint(4);

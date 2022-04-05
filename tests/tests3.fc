@@ -294,8 +294,8 @@ _ t3_throw(int exit_code, cell data, tuple stack, cell actions, int gas) method_
 
 
 {-
-INFO: Test [t3_op1] status: [SUCCESS] Gas used: [1765]
-INFO: Test [t3_op2] status: [SUCCESS] Gas used: [2372]
-INFO: Test [t3_op2_empty] status: [SUCCESS] Gas used: [2372]
-INFO: Test [t3_throw] status: [SUCCESS] Gas used: [1132]
+INFO: Test [t3_op1] status: [SUCCESS] Gas used: [1739]
+INFO: Test [t3_op2] status: [SUCCESS] Gas used: [2346]
+INFO: Test [t3_op2_empty] status: [SUCCESS] Gas used: [2346]
+INFO: Test [t3_throw] status: [SUCCESS] Gas used: [1106]
 -}

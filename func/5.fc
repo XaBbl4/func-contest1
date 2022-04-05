@@ -34,8 +34,18 @@ global int ctx_public_key_1;    ;; uint256
 global int ctx_public_key_2;    ;; uint256
 global int ctx_cnt_attempts;    ;; uint8
 global int ctx_last_attempt;    ;; uint32
-global int ctx_approved;        ;; uint2
-global int ctx_request_hash;
+global cell ctx_requests;       ;; dict of requests
+
+;; error_code
+;; 63 - attempt count more than 10 requests per minute
+;; 62 - owner not found
+;; 61 - valid until < now()
+;; 60 - valid until > now() + 60
+;; 59 - incorrect signature
+;; 58 - all owner's approved the request
+;; 57 - send first or same request from one owner
+
+
 
 {-
 () load_data() impure {
@@ -46,8 +56,7 @@ global int ctx_request_hash;
   ctx_cnt_attempts = ds~load_uint(8);
   ctx_last_attempt = ds~load_uint(32);
 
-  ctx_approved = ds~load_uint(2);
-  ctx_request_hash = ds~load_uint(256);
+  ctx_requests = ds~load_dict();
   ds.end_parse();
 }
 
@@ -57,18 +66,21 @@ global int ctx_request_hash;
     .store_uint(ctx_public_key_2, 256)    ;; public key 2
     .store_uint(ctx_cnt_attempts, 8)      ;; count of recv_external
     .store_uint(ctx_last_attempt, 32)     ;; last recv_external
-    .store_uint(ctx_approved, 2)          ;; who approved the request
-    .store_uint(ctx_request_hash, 256)         ;; request hash
+    .store_dict(ctx_requests)             ;; dict of requests
   .end_cell());
-  ;;commit();
+  commit();
 }
 
 () check_attempt() impure {
-  if (ctx_last_attempt + 60 <= now()) {
+  if (ctx_last_attempt + 60 < now()) {
     ctx_cnt_attempts = 0;
   }
   ctx_cnt_attempts += 1;
-  throw_if(63, ctx_cnt_attempts > 10);
+  ;;throw_if(63, ctx_cnt_attempts > 10);
+  if (ctx_cnt_attempts > 10) {
+    ;;save_data();  ;; no need save data, next attempt with same error
+    throw(63);
+  }
   ctx_last_attempt = now();
 }
 -}
@@ -81,8 +93,7 @@ cell pack_data(int public_key1, int public_key2) method_id {
   ctx_public_key_2 = public_key2;
   ctx_cnt_attempts = 0;
   ctx_last_attempt = now();
-  ctx_approved = 0;
-  ctx_request_hash = 0;
+  ctx_requests = new_dict();
 
   ;; save_data() and return it
   cell data = begin_cell()
@@ -90,8 +101,7 @@ cell pack_data(int public_key1, int public_key2) method_id {
     .store_uint(ctx_public_key_2, 256)    ;; public key 2
     .store_uint(ctx_cnt_attempts, 8)      ;; count of recv_external
     .store_uint(ctx_last_attempt, 32)     ;; last recv_external
-    .store_uint(ctx_approved, 2)          ;; who approved the request
-    .store_uint(ctx_request_hash, 256)    ;; request hash
+    .store_dict(ctx_requests)             ;; dict of requests
   .end_cell();
   
   set_data(data);
@@ -108,19 +118,22 @@ cell pack_data(int public_key1, int public_key2) method_id {
   ctx_cnt_attempts = ds~load_uint(8);
   ctx_last_attempt = ds~load_uint(32);
 
-  ctx_approved = ds~load_uint(2);
-  ctx_request_hash = ds~load_uint(256);
+  ctx_requests = ds~load_dict();
   ds.end_parse();
 
   ;;check_attempt();
-  if (ctx_last_attempt + 60 <= now()) {
+  if (ctx_last_attempt + 60 < now()) {
     ctx_cnt_attempts = 0;
   }
   ctx_cnt_attempts += 1;
-  throw_if(63, ctx_cnt_attempts > 10);
+  if (ctx_cnt_attempts > 10) {
+    ;; don't need save data, next attempt with same error >>>>> save gas
+    throw(63);
+  }
   ctx_last_attempt = now();
 
-  ;;dump_stack();
+  int err_no = 0;
+
   int mask = 0;
   var public_key = in_msg_body~load_uint(256);
   if (public_key == ctx_public_key_1) {
@@ -129,39 +142,63 @@ cell pack_data(int public_key1, int public_key2) method_id {
     if (public_key == ctx_public_key_2) {
       mask = 0x2;
     } else {
-      throw(62);
+      err_no = 62;
     }
   }
 
-  var signature = in_msg_body~load_bits(512);
-  var request_cell = (in_msg_body~load_ref());
-  var request = request_cell.begin_parse();
+  ifnot (err_no) {
+    var signature = in_msg_body~load_bits(512);
+    var request = (in_msg_body~load_ref()).begin_parse();
+    slice req_to_save = request;
 
-  var request_hash = slice_hash(request);
-  ;;dump_stack();
-  throw_unless(59, check_signature(request_hash, signature, public_key));
-
-  if (request_hash == ctx_request_hash) {
-    ctx_approved |= mask;
-  } else {
-    ctx_approved = mask;
-    ctx_request_hash = request_hash;
-  }
-
-  if (((ctx_approved ^ 3) & 3) == 0) {
     var valid_until = request~load_uint(32);
-    ;;dump_stack();
-    ;;throw_if(61, valid_until <= now());
-    throw_if(60, valid_until > now() + 60);
+    ;; for testing:
+    ;;valid_until = now() + 20;
+    if (valid_until <= now()) {
+      err_no = 61;
+    }
+    if (valid_until > now() + 60) {
+      err_no = 60;
+    }
 
-    accept_message();
-    ;;while (request.slice_refs()) {
-      var mode = request~load_uint(8);
-      send_raw_message(request~load_ref(), mode);
-    ;;}
+    ifnot (err_no) {
+      var request_hash = slice_hash(req_to_save);
+      ifnot (check_signature(request_hash, signature, public_key)) {
+        err_no = 59;
+      }
 
-    ctx_approved = 0;
-    ctx_request_hash = 0;
+      ifnot (err_no) {
+        int approved = 0;
+        (slice req, int f) = ctx_requests.udict_get?(256, request_hash);
+        if (f) {
+          approved = req~load_uint(2);
+          if (approved == 3) {
+            err_no = 58;
+          }
+
+          approved |= mask;
+        } else {
+          approved = mask;
+        }
+
+        ifnot (err_no) {
+          if (((approved ^ 3) & 3) == 0) {
+            accept_message();
+            ;;while (request.slice_refs()) {
+              var mode = request~load_uint(8);
+              send_raw_message(request~load_ref(), mode);
+            ;;}
+          } else {
+            err_no = 57;
+          }
+        }
+
+        ctx_requests = udict_set(ctx_requests, 256, request_hash, begin_cell()
+          .store_uint(approved, 2)
+          .store_slice(req_to_save)
+          .end_cell().begin_parse());
+      }
+    }
   }
 
   ;;save_data();
@@ -170,10 +207,14 @@ cell pack_data(int public_key1, int public_key2) method_id {
     .store_uint(ctx_public_key_2, 256)    ;; public key 2
     .store_uint(ctx_cnt_attempts, 8)      ;; count of recv_external
     .store_uint(ctx_last_attempt, 32)     ;; last recv_external
-    .store_uint(ctx_approved, 2)          ;; who approved the request
-    .store_uint(ctx_request_hash, 256)    ;; request hash
+    .store_dict(ctx_requests)             ;; dict of requests
   .end_cell();
   set_data(data);
+  commit();
+
+  if (err_no) {
+    throw(err_no);
+  }
 }
 
 () recv_internal(slice in_msg_body) {

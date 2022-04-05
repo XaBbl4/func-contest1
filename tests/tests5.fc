@@ -35,7 +35,7 @@
 ;; By default test is passed
 ;; You can use throw_if to fail test
 _ t5_init(int exit_code, cell data, tuple stack, cell actions, int gas) method_id(1) {
-    throw_if(100, exit_code != 0); ;; test need to be passed
+    throw_if(100, exit_code != 0);
     
     ;;dump_stack();
     slice cs = first(stack).begin_parse();
@@ -52,7 +52,84 @@ _ t5_init(int exit_code, cell data, tuple stack, cell actions, int gas) method_i
 
 
 
-[int, tuple, cell, tuple, int] t5_send_1_data() method_id(2) {
+[int, tuple, cell, tuple, int] t5_owner1_sending_data() method_id(2) {
+    ;; Funtion to run (recv_external)
+    int function_selector = -1;
+
+    int priv_key_1 = 0x239f2092ade534c52386513a896d301881c1bd12614fc232d00bf281e37932db;
+    int pub_key_1 = 0x27954a84e5329d47303740575ad34a7b5eca93a686768fc4e3661939db179338;
+
+    int priv_key_2 = 0xd064408cb9fb2b3db6f91aa69c193ebe7ec8ff57fc0519b966aa27abc10cfb48;
+    int pub_key_2 = 0x17dc8c126188f45b6d4bc3662c35ac2b800fd5eac772be813253baee0d9a9078;
+
+    cell msg_to_send = begin_cell()
+        .store_uint(0x10, 6)
+        .store_slice(my_address())
+        .store_coins(0)
+        .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
+        .store_uint(123, 32)
+        .end_cell();
+    ;;dump_stack();
+
+    cell request = begin_cell()     ;; request:^Request
+        .store_uint(1648859337, 32) ;;   valid_until (now())
+        .store_uint(64, 8)          ;;   mode
+        .store_ref(msg_to_send)     ;;   msg_to_send:^Cell (for send_raw_message)
+        .end_cell();
+    request~dump();     ;; for test generating signature
+
+    slice signature = begin_cell()
+        .store_uint(0x777c2997d26969ecf6744552f105bb8903ac580222329885455d0943042e434e, 256)
+        .store_uint(0xf1046b636344e1407461f928fbf14cffbbc99457a94dda5846112e1f488f7a0e, 256)
+        .end_cell().begin_parse();
+    ;;dump_stack();
+
+    slice msg_body = begin_cell()
+        .store_uint(pub_key_1, 256) ;; public_key
+        .store_slice(signature)     ;; signature
+        .store_ref(request)         ;; request
+    .end_cell().begin_parse();
+    ;;dump_stack();
+
+    return [function_selector, unsafe_tuple([msg_body]), get_prev_c4(), get_c7(), null()];
+}
+
+_ t5_owner1_sending(int exit_code, cell data, tuple stack, cell actions, int gas) method_id(3) {
+    throw_if(100, actions.cell_depth() != 0); ;; actions is empty
+    throw_if(exit_code, exit_code != 57);
+{-
+    int priv_key_1 = 0x239f2092ade534c52386513a896d301881c1bd12614fc232d00bf281e37932db;
+    int pub_key_1 = 0x27954a84e5329d47303740575ad34a7b5eca93a686768fc4e3661939db179338;
+
+    slice sign_s = begin_cell()
+        ;;.store_uint(0x4631fca9912fcc6d1b7fc94a2114fdf23beec4cc31acfd3bc581363d76318845, 256)
+        ;;.store_uint(0x918765111249aa0024829b9d5eaf2870ded22f96ea8f84b1122d8816cfde290e, 256)
+        .store_uint(0x58d20477510782b7f15a166a257a2ce9f7eb6879d301026283d4a0955dca86b8, 256)
+        .store_uint(0xba3414edc7d3b861beeb387bb3e62301abed665f9b4ed854339f57cdc50c910f, 256)
+        .end_cell().begin_parse();
+    ;;var signature = sign_s~load_bits(512);
+    ;;dump_stack();
+
+    cell test_c = begin_cell()
+        .store_uint(0x54657374, 32)
+        .end_cell();
+    slice test_s = test_c.begin_parse();
+
+    ;;dump_stack();
+    ;;throw_unless(150, check_data_signature(test_s, sign_s, pub_key_1));
+    throw_unless(150, check_signature(cell_hash(test_c), sign_s, pub_key_1));
+    int hash_c = cell_hash(test_c);
+    int hash_s = slice_hash(test_s);
+    slice t = begin_cell().store_uint(hash_c, 256).end_cell().begin_parse();
+    ;;457a876813ab40760124d323ef84b7ae41c76ff976cd13f1b8e5f0ab0cbd4df7
+    ;;dump_stack();
+    throw_unless(151, t.slice_bits() > 0);
+-}
+}
+
+
+
+[int, tuple, cell, tuple, int] t5_owner1_resending_data() method_id(4) {
     ;; Funtion to run (recv_external)
     int function_selector = -1;
 
@@ -94,47 +171,32 @@ _ t5_init(int exit_code, cell data, tuple stack, cell actions, int gas) method_i
     return [function_selector, unsafe_tuple([msg_body]), get_prev_c4(), get_c7(), null()];
 }
 
-_ t5_send_1(int exit_code, cell data, tuple stack, cell actions, int gas) method_id(3) {
-    throw_if(exit_code, exit_code != 0); ;; test need to be passed
+_ t5_owner1_resending(int exit_code, cell data, tuple stack, cell actions, int gas) method_id(5) {
+    throw_if(101, actions.cell_depth() != 0);
+    throw_if(exit_code, exit_code != 57);
 
-{-
-    int priv_key_1 = 0x239f2092ade534c52386513a896d301881c1bd12614fc232d00bf281e37932db;
-    int pub_key_1 = 0x27954a84e5329d47303740575ad34a7b5eca93a686768fc4e3661939db179338;
-
-    slice sign_s = begin_cell()
-        ;;.store_uint(0x4631fca9912fcc6d1b7fc94a2114fdf23beec4cc31acfd3bc581363d76318845, 256)
-        ;;.store_uint(0x918765111249aa0024829b9d5eaf2870ded22f96ea8f84b1122d8816cfde290e, 256)
-        .store_uint(0x58d20477510782b7f15a166a257a2ce9f7eb6879d301026283d4a0955dca86b8, 256)
-        .store_uint(0xba3414edc7d3b861beeb387bb3e62301abed665f9b4ed854339f57cdc50c910f, 256)
-        .end_cell().begin_parse();
-    ;;var signature = sign_s~load_bits(512);
-    ;;dump_stack();
-
-    cell test_c = begin_cell()
-        .store_uint(0x54657374, 32)
-        .end_cell();
-    slice test_s = test_c.begin_parse();
-
-    ;;dump_stack();
-    ;;throw_unless(150, check_data_signature(test_s, sign_s, pub_key_1));
-    throw_unless(150, check_signature(cell_hash(test_c), sign_s, pub_key_1));
-    int hash_c = cell_hash(test_c);
-    int hash_s = slice_hash(test_s);
-    slice t = begin_cell().store_uint(hash_c, 256).end_cell().begin_parse();
-    ;;457a876813ab40760124d323ef84b7ae41c76ff976cd13f1b8e5f0ab0cbd4df7
-    ;;dump_stack();
-    throw_unless(151, t.slice_bits() > 0);
--}
-
-    ;;var ds = data.begin_parse();
-
-    ;;throw_if(101, ds~load_uint(64) != 10);
-    throw_if(102, gas > 1000000); ;; check if gas usage is not so big
+    {-
+    var d = data.begin_parse();
+    var pk1 = d~load_uint(256);
+    var pk2 = d~load_uint(256);
+    var cnt = d~load_uint(8);
+    var last = d~load_uint(32);
+    var dict = d~load_dict().begin_parse();
+    var tt = dict~load_ref();
+    var ttt = tt.begin_parse();
+    dump_stack();
+    var t = ttt~load_uint(1);
+    throw_if(100, pk1 == 0);
+    throw_if(100, pk2 == 0);
+    throw_if(100, cnt == 0);
+    throw_if(100, last == 0);
+    throw_if(100, t == 0);
+    -}
 }
 
 
 
-[int, tuple, cell, tuple, int] t5_send_2_data() method_id(4) {
+[int, tuple, cell, tuple, int] t5_owner2_sending_data() method_id(6) {
     ;; Funtion to run (recv_external)
     int function_selector = -1;
 
@@ -178,7 +240,233 @@ _ t5_send_1(int exit_code, cell data, tuple stack, cell actions, int gas) method
     return [function_selector, unsafe_tuple([msg_body]), get_prev_c4(), get_c7(), null()];
 }
 
-_ t5_send_2(int exit_code, cell data, tuple stack, cell actions, int gas) method_id(5) {
-    throw_if(exit_code, exit_code != 0); ;; test need to be passed
-    throw_if(102, gas > 1000000); ;; check if gas usage is not so big
+_ t5_owner2_sending(int exit_code, cell data, tuple stack, cell actions, int gas) method_id(7) {
+    throw_if(101, actions.cell_depth() == 0);  ;; actions is not empty
+    throw_if(exit_code, exit_code != 0);
 }
+
+
+
+[int, tuple, cell, tuple, int] t5_owner2_resending_data() method_id(8) {
+    ;; Funtion to run (recv_external)
+    int function_selector = -1;
+
+    int priv_key_1 = 0x239f2092ade534c52386513a896d301881c1bd12614fc232d00bf281e37932db;
+    int pub_key_1 = 0x27954a84e5329d47303740575ad34a7b5eca93a686768fc4e3661939db179338;
+
+    int priv_key_2 = 0xd064408cb9fb2b3db6f91aa69c193ebe7ec8ff57fc0519b966aa27abc10cfb48;
+    int pub_key_2 = 0x17dc8c126188f45b6d4bc3662c35ac2b800fd5eac772be813253baee0d9a9078;
+
+    cell msg_to_send = begin_cell()
+        .store_uint(0x10, 6)
+        .store_slice(my_address())
+        .store_coins(0)
+        .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
+        .store_uint(123, 32)
+        .end_cell();
+    ;;dump_stack();
+
+    cell request = begin_cell()     ;; request:^Request
+        .store_uint(1648859337, 32) ;;   valid_until (now())
+        .store_uint(64, 8)          ;;   mode
+        .store_ref(msg_to_send)     ;;   msg_to_send:^Cell (for send_raw_message)
+        .end_cell();
+    ;;dump_stack();
+
+    slice signature = begin_cell()
+        .store_uint(0x3ca84d25598f7353a44c9288dada340756ce523984a416cb3fd6243e70939e59, 256)
+        .store_uint(0x49dca6e03a46ee3883a4f9015c291637ff34cb2e70908d72a1d6f4a04dd84805, 256)
+        .end_cell().begin_parse();
+    ;;dump_stack();
+
+    slice msg_body = begin_cell()
+        .store_uint(pub_key_2, 256) ;; public_key
+        .store_slice(signature)     ;; signature
+        ;;.store_uint(6, 256)         ;; signature part 1
+        ;;.store_uint(7, 256)         ;; signature part 2
+        .store_ref(request)         ;; request
+    .end_cell().begin_parse();
+    ;;dump_stack();
+
+    return [function_selector, unsafe_tuple([msg_body]), get_prev_c4(), get_c7(), null()];
+}
+
+_ t5_owner2_resending(int exit_code, cell data, tuple stack, cell actions, int gas) method_id(9) {
+    throw_if(101, actions.cell_depth() != 0);
+    throw_if(exit_code, exit_code != 58);
+}
+
+
+
+[int, tuple, cell, tuple, int] t5_skip_1_data() method_id(10) {
+    ;; Funtion to run (recv_external)
+    int function_selector = -1;
+
+    slice msg_body = begin_cell()
+        .store_uint(0, 256)         ;; public_key
+        .store_uint(0, 256)         ;; signature part 1
+        .store_uint(0, 256)         ;; signature part 2
+        .store_ref(begin_cell().end_cell())         ;; request
+    .end_cell().begin_parse();
+    ;;dump_stack();
+
+    return [function_selector, unsafe_tuple([msg_body]), get_prev_c4(), get_c7(), null()];
+}
+
+_ t5_skip_1(int exit_code, cell data, tuple stack, cell actions, int gas) method_id(11) {
+    throw_if(exit_code, exit_code != 62);
+}
+
+
+
+[int, tuple, cell, tuple, int] t5_skip_2_data() method_id(12) {
+    ;; Funtion to run (recv_external)
+    int function_selector = -1;
+
+    slice msg_body = begin_cell()
+        .store_uint(0, 256)         ;; public_key
+        .store_uint(0, 256)         ;; signature part 1
+        .store_uint(0, 256)         ;; signature part 2
+        .store_ref(begin_cell().end_cell())         ;; request
+    .end_cell().begin_parse();
+    ;;dump_stack();
+
+    return [function_selector, unsafe_tuple([msg_body]), get_prev_c4(), get_c7(), null()];
+}
+
+_ t5_skip_2(int exit_code, cell data, tuple stack, cell actions, int gas) method_id(13) {
+    throw_if(exit_code, exit_code != 62);
+}
+
+
+
+[int, tuple, cell, tuple, int] t5_skip_3_data() method_id(14) {
+    ;; Funtion to run (recv_external)
+    int function_selector = -1;
+
+    int pub_key_1 = 0x27954a84e5329d47303740575ad34a7b5eca93a686768fc4e3661939db179338;
+
+    slice msg_body = begin_cell()
+        .store_uint(0, 256)         ;; public_key
+        .store_uint(0, 256)         ;; signature part 1
+        .store_uint(0, 256)         ;; signature part 2
+        .store_ref(begin_cell().end_cell())         ;; request
+    .end_cell().begin_parse();
+    ;;dump_stack();
+
+    return [function_selector, unsafe_tuple([msg_body]), get_prev_c4(), get_c7(), null()];
+}
+
+_ t5_skip_3(int exit_code, cell data, tuple stack, cell actions, int gas) method_id(15) {
+    throw_if(exit_code, exit_code != 62);
+}
+
+
+
+[int, tuple, cell, tuple, int] t5_valid_after_data() method_id(16) {
+    ;; Funtion to run (recv_external)
+    int function_selector = -1;
+
+    int pub_key_1 = 0x27954a84e5329d47303740575ad34a7b5eca93a686768fc4e3661939db179338;
+
+    slice msg_body = begin_cell()
+        .store_uint(pub_key_1, 256) ;; public_key
+        .store_uint(0, 256)         ;; signature part 1
+        .store_uint(0, 256)         ;; signature part 2
+        .store_ref(begin_cell()     ;; request
+            .store_uint(now() + 61, 32)   ;; valid_until (now())
+            .end_cell())
+    .end_cell().begin_parse();
+    ;;dump_stack();
+
+    return [function_selector, unsafe_tuple([msg_body]), get_prev_c4(), get_c7(), null()];
+}
+
+_ t5_valid_after(int exit_code, cell data, tuple stack, cell actions, int gas) method_id(17) {
+    throw_if(exit_code, exit_code != 60);
+}
+
+
+
+[int, tuple, cell, tuple, int] t5_valid_before_data() method_id(18) {
+    ;; Funtion to run (recv_external)
+    int function_selector = -1;
+
+    int pub_key_1 = 0x27954a84e5329d47303740575ad34a7b5eca93a686768fc4e3661939db179338;
+
+    slice msg_body = begin_cell()
+        .store_uint(pub_key_1, 256) ;; public_key
+        .store_uint(0, 256)         ;; signature part 1
+        .store_uint(0, 256)         ;; signature part 2
+        .store_ref(begin_cell()     ;; request
+            .store_uint(now() - 1, 32)   ;; valid_until (now())
+            .end_cell())
+    .end_cell().begin_parse();
+    ;;dump_stack();
+
+    return [function_selector, unsafe_tuple([msg_body]), get_prev_c4(), get_c7(), null()];
+}
+
+_ t5_valid_before(int exit_code, cell data, tuple stack, cell actions, int gas) method_id(19) {
+    throw_if(exit_code, exit_code != 61);
+}
+
+
+
+
+[int, tuple, cell, tuple, int] t5_owner_not_found_data() method_id(20) {
+    ;; Funtion to run (recv_external)
+    int function_selector = -1;
+
+    slice msg_body = begin_cell()
+        .store_uint(0, 256)         ;; public_key
+        .store_uint(0, 256)         ;; signature part 1
+        .store_uint(0, 256)         ;; signature part 2
+        .store_ref(begin_cell().end_cell())         ;; request
+    .end_cell().begin_parse();
+    ;;dump_stack();
+
+    return [function_selector, unsafe_tuple([msg_body]), get_prev_c4(), get_c7(), null()];
+}
+
+_ t5_owner_not_found(int exit_code, cell data, tuple stack, cell actions, int gas) method_id(21) {
+    throw_if(exit_code, exit_code != 62);
+}
+
+
+
+[int, tuple, cell, tuple, int] t5_over_attempts_data() method_id(22) {
+    ;; Funtion to run (recv_external)
+    int function_selector = -1;
+
+    slice msg_body = begin_cell()
+        .store_uint(0, 256)         ;; public_key
+        .store_uint(0, 256)         ;; signature part 1
+        .store_uint(0, 256)         ;; signature part 2
+        .store_ref(begin_cell().end_cell())         ;; request
+    .end_cell().begin_parse();
+    ;;dump_stack();
+
+    return [function_selector, unsafe_tuple([msg_body]), get_prev_c4(), get_c7(), null()];
+}
+
+_ t5_over_attempts(int exit_code, cell data, tuple stack, cell actions, int gas) method_id(23) {
+    throw_if(exit_code, exit_code != 63);
+}
+
+
+
+{-
+INFO: Test [t5_init] status: [SUCCESS] Gas used: [1455]
+INFO: Test [t5_owner1_sending] status: [SUCCESS] Gas used: [6057]
+INFO: Test [t5_owner1_resending] status: [SUCCESS] Gas used: [6322]
+INFO: Test [t5_owner2_sending] status: [SUCCESS] Gas used: [6991]
+INFO: Test [t5_owner2_resending] status: [SUCCESS] Gas used: [6281]
+INFO: Test [t5_skip_1] status: [SUCCESS] Gas used: [2797]
+INFO: Test [t5_skip_2] status: [SUCCESS] Gas used: [2797]
+INFO: Test [t5_skip_3] status: [SUCCESS] Gas used: [2797]
+INFO: Test [t5_valid_after] status: [SUCCESS] Gas used: [3330]
+INFO: Test [t5_valid_before] status: [SUCCESS] Gas used: [3330]
+INFO: Test [t5_owner_not_found] status: [SUCCESS] Gas used: [2797]
+INFO: Test [t5_over_attempts] status: [SUCCESS] Gas used: [1183]
+-}

@@ -293,9 +293,53 @@ _ t3_throw(int exit_code, cell data, tuple stack, cell actions, int gas) method_
 
 
 
+[int, tuple, cell, tuple, int] t3_external_addr_data() method_id(8) {
+    ;; Funtion to run (recv_internal)
+    int function_selector = 0;
+
+    ;; Example contract message body
+    cell msg_full = begin_cell()
+        .store_int(0, 4) ;; flags
+        .store_slice(my_address())
+        .end_cell();
+
+    cell msg_body = begin_cell()
+        .store_uint(1, 32)
+        .store_uint(99, 64)
+        .store_uint(1, 2).store_uint(8, 8).store_uint(0xffff, 17)
+        .end_cell();
+
+    tuple stack = unsafe_tuple([0, 0, msg_full, msg_body.begin_parse()]);
+
+    ;; initial data of contract
+    cell data = begin_cell()
+        .store_slice(my_address())
+        .store_int(0, 2)
+        .end_cell();
+
+    return [function_selector, stack, data, get_c7(), null()];
+}
+
+_ t3_external_addr(int exit_code, cell data, tuple stack, cell actions, int gas) method_id(9) {
+    throw_if(exit_code, exit_code != 0); ;; test need to be passed
+
+    var ds = data.begin_parse();
+
+    var manager_address = ds~load_msg_addr();
+    var memorized_address = ds~load_msg_addr();
+
+    ;; Check memorized_address is empty
+    throw_if(101, ~ equal_slices(memorized_address, begin_cell().store_uint(1, 2).store_uint(8, 8).store_uint(0xffff, 17).end_cell().begin_parse()));
+    ;;throw_if(102, actions.cell_depth() != 0);
+    throw_if(103, gas > 1000000); ;; check if gas usage is not so big
+}
+
+
+
 {-
 INFO: Test [t3_op1] status: [SUCCESS] Gas used: [1739]
 INFO: Test [t3_op2] status: [SUCCESS] Gas used: [2346]
 INFO: Test [t3_op2_empty] status: [SUCCESS] Gas used: [2346]
 INFO: Test [t3_throw] status: [SUCCESS] Gas used: [1106]
+INFO: Test [t3_external_addr] status: [SUCCESS] Gas used: [1739]
 -}

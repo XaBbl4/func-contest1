@@ -71,16 +71,18 @@ _ t5_init(int exit_code, cell data, tuple stack, cell actions, int gas) method_i
         .end_cell();
     ;;dump_stack();
 
+    int valid_until = 0{-valid_until-};
     cell request = begin_cell()     ;; request:^Request
-        .store_uint(1648859337, 32) ;;   valid_until (now())
+        .store_uint(valid_until, 32) ;;   valid_until (now())
         .store_uint(64, 8)          ;;   mode
         .store_ref(msg_to_send)     ;;   msg_to_send:^Cell (for send_raw_message)
         .end_cell();
+    valid_until~dump();
     request~dump();     ;; for test generating signature
 
     slice signature = begin_cell()
-        .store_uint(0x777c2997d26969ecf6744552f105bb8903ac580222329885455d0943042e434e, 256)
-        .store_uint(0xf1046b636344e1407461f928fbf14cffbbc99457a94dda5846112e1f488f7a0e, 256)
+        .store_uint(0{-test1-key1-signature1-}, 256)
+        .store_uint(0{-test1-key1-signature2-}, 256)
         .end_cell().begin_parse();
     ;;dump_stack();
 
@@ -149,15 +151,15 @@ _ t5_owner1_sending(int exit_code, cell data, tuple stack, cell actions, int gas
     ;;dump_stack();
 
     cell request = begin_cell()     ;; request:^Request
-        .store_uint(1648859337, 32) ;;   valid_until (now())
+        .store_uint(0{-valid_until-}, 32) ;;   valid_until (now())
         .store_uint(64, 8)          ;;   mode
         .store_ref(msg_to_send)     ;;   msg_to_send:^Cell (for send_raw_message)
         .end_cell();
     ;;dump_stack();
 
     slice signature = begin_cell()
-        .store_uint(0x777c2997d26969ecf6744552f105bb8903ac580222329885455d0943042e434e, 256)
-        .store_uint(0xf1046b636344e1407461f928fbf14cffbbc99457a94dda5846112e1f488f7a0e, 256)
+        .store_uint(0{-test1-key1-signature1-}, 256)
+        .store_uint(0{-test1-key1-signature2-}, 256)
         .end_cell().begin_parse();
     ;;dump_stack();
 
@@ -216,15 +218,15 @@ _ t5_owner1_resending(int exit_code, cell data, tuple stack, cell actions, int g
     ;;dump_stack();
 
     cell request = begin_cell()     ;; request:^Request
-        .store_uint(1648859337, 32) ;;   valid_until (now())
+        .store_uint(0{-valid_until-}, 32) ;;   valid_until (now())
         .store_uint(64, 8)          ;;   mode
         .store_ref(msg_to_send)     ;;   msg_to_send:^Cell (for send_raw_message)
         .end_cell();
     ;;dump_stack();
 
     slice signature = begin_cell()
-        .store_uint(0x3ca84d25598f7353a44c9288dada340756ce523984a416cb3fd6243e70939e59, 256)
-        .store_uint(0x49dca6e03a46ee3883a4f9015c291637ff34cb2e70908d72a1d6f4a04dd84805, 256)
+        .store_uint(0{-test1-key2-signature1-}, 256)
+        .store_uint(0{-test1-key2-signature2-}, 256)
         .end_cell().begin_parse();
     ;;dump_stack();
 
@@ -267,15 +269,15 @@ _ t5_owner2_sending(int exit_code, cell data, tuple stack, cell actions, int gas
     ;;dump_stack();
 
     cell request = begin_cell()     ;; request:^Request
-        .store_uint(1648859337, 32) ;;   valid_until (now())
+        .store_uint(0{-valid_until-}, 32) ;;   valid_until (now())
         .store_uint(64, 8)          ;;   mode
         .store_ref(msg_to_send)     ;;   msg_to_send:^Cell (for send_raw_message)
         .end_cell();
     ;;dump_stack();
 
     slice signature = begin_cell()
-        .store_uint(0x3ca84d25598f7353a44c9288dada340756ce523984a416cb3fd6243e70939e59, 256)
-        .store_uint(0x49dca6e03a46ee3883a4f9015c291637ff34cb2e70908d72a1d6f4a04dd84805, 256)
+        .store_uint(0{-test1-key2-signature1-}, 256)
+        .store_uint(0{-test1-key2-signature2-}, 256)
         .end_cell().begin_parse();
     ;;dump_stack();
 
@@ -298,72 +300,211 @@ _ t5_owner2_resending(int exit_code, cell data, tuple stack, cell actions, int g
 
 
 
-[int, tuple, cell, tuple, int] t5_skip_1_data() method_id(10) {
+[int, tuple, cell, tuple, int] t5_owner2_send1_data() method_id(10) {
     ;; Funtion to run (recv_external)
     int function_selector = -1;
 
-    slice msg_body = begin_cell()
-        .store_uint(0, 256)         ;; public_key
-        .store_uint(0, 256)         ;; signature part 1
-        .store_uint(0, 256)         ;; signature part 2
-        .store_ref(begin_cell().end_cell())         ;; request
-    .end_cell().begin_parse();
-    ;;dump_stack();
-
-    return [function_selector, unsafe_tuple([msg_body]), get_prev_c4(), get_c7(), null()];
-}
-
-_ t5_skip_1(int exit_code, cell data, tuple stack, cell actions, int gas) method_id(11) {
-    throw_if(exit_code, exit_code != 62);
-}
-
-
-
-[int, tuple, cell, tuple, int] t5_skip_2_data() method_id(12) {
-    ;; Funtion to run (recv_external)
-    int function_selector = -1;
-
-    slice msg_body = begin_cell()
-        .store_uint(0, 256)         ;; public_key
-        .store_uint(0, 256)         ;; signature part 1
-        .store_uint(0, 256)         ;; signature part 2
-        .store_ref(begin_cell().end_cell())         ;; request
-    .end_cell().begin_parse();
-    ;;dump_stack();
-
-    return [function_selector, unsafe_tuple([msg_body]), get_prev_c4(), get_c7(), null()];
-}
-
-_ t5_skip_2(int exit_code, cell data, tuple stack, cell actions, int gas) method_id(13) {
-    throw_if(exit_code, exit_code != 62);
-}
-
-
-
-[int, tuple, cell, tuple, int] t5_skip_3_data() method_id(14) {
-    ;; Funtion to run (recv_external)
-    int function_selector = -1;
-
+    int priv_key_1 = 0x239f2092ade534c52386513a896d301881c1bd12614fc232d00bf281e37932db;
     int pub_key_1 = 0x27954a84e5329d47303740575ad34a7b5eca93a686768fc4e3661939db179338;
 
+    int priv_key_2 = 0xd064408cb9fb2b3db6f91aa69c193ebe7ec8ff57fc0519b966aa27abc10cfb48;
+    int pub_key_2 = 0x17dc8c126188f45b6d4bc3662c35ac2b800fd5eac772be813253baee0d9a9078;
+
+    cell msg_to_send = begin_cell()
+        .store_uint(0x10, 6)
+        .store_slice(my_address())
+        .store_coins(0)
+        .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
+        .store_uint(666, 32)
+        .end_cell();
+    ;;dump_stack();
+
+    int valid_until = 0{-valid_until-};
+    cell request = begin_cell()     ;; request:^Request
+        .store_uint(valid_until, 32) ;;   valid_until (now())
+        .store_uint(64, 8)          ;;   mode
+        .store_ref(msg_to_send)     ;;   msg_to_send:^Cell (for send_raw_message)
+        .end_cell();
+    valid_until~dump();
+    request~dump();
+
+    slice signature = begin_cell()
+        .store_uint(0{-test2-key2-signature1-}, 256)
+        .store_uint(0{-test2-key2-signature2-}, 256)
+        .end_cell().begin_parse();
+    ;;dump_stack();
+
     slice msg_body = begin_cell()
-        .store_uint(0, 256)         ;; public_key
-        .store_uint(0, 256)         ;; signature part 1
-        .store_uint(0, 256)         ;; signature part 2
-        .store_ref(begin_cell().end_cell())         ;; request
+        .store_uint(pub_key_2, 256) ;; public_key
+        .store_slice(signature)     ;; signature
+        .store_ref(request)         ;; request
     .end_cell().begin_parse();
     ;;dump_stack();
 
     return [function_selector, unsafe_tuple([msg_body]), get_prev_c4(), get_c7(), null()];
 }
 
-_ t5_skip_3(int exit_code, cell data, tuple stack, cell actions, int gas) method_id(15) {
-    throw_if(exit_code, exit_code != 62);
+_ t5_owner2_send1(int exit_code, cell data, tuple stack, cell actions, int gas) method_id(11) {
+    throw_if(101, actions.cell_depth() != 0);
+    throw_if(exit_code, exit_code != 57);
 }
 
 
 
-[int, tuple, cell, tuple, int] t5_valid_after_data() method_id(16) {
+[int, tuple, cell, tuple, int] t5_owner2_send2_data() method_id(12) {
+    ;; Funtion to run (recv_external)
+    int function_selector = -1;
+
+    int priv_key_1 = 0x239f2092ade534c52386513a896d301881c1bd12614fc232d00bf281e37932db;
+    int pub_key_1 = 0x27954a84e5329d47303740575ad34a7b5eca93a686768fc4e3661939db179338;
+
+    int priv_key_2 = 0xd064408cb9fb2b3db6f91aa69c193ebe7ec8ff57fc0519b966aa27abc10cfb48;
+    int pub_key_2 = 0x17dc8c126188f45b6d4bc3662c35ac2b800fd5eac772be813253baee0d9a9078;
+
+    cell msg_to_send = begin_cell()
+        .store_uint(0x10, 6)
+        .store_slice(my_address())
+        .store_coins(0)
+        .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
+        .store_uint(999, 32)
+        .end_cell();
+    ;;dump_stack();
+
+    int valid_until = 0{-valid_until-};
+    cell request = begin_cell()     ;; request:^Request
+        .store_uint(valid_until, 32) ;;   valid_until (now())
+        .store_uint(64, 8)          ;;   mode
+        .store_ref(msg_to_send)     ;;   msg_to_send:^Cell (for send_raw_message)
+        .end_cell();
+    valid_until~dump();
+    request~dump();
+
+    slice signature = begin_cell()
+        .store_uint(0{-test3-key2-signature1-}, 256)
+        .store_uint(0{-test3-key2-signature2-}, 256)
+        .end_cell().begin_parse();
+    ;;dump_stack();
+
+    slice msg_body = begin_cell()
+        .store_uint(pub_key_2, 256) ;; public_key
+        .store_slice(signature)     ;; signature
+        .store_ref(request)         ;; request
+    .end_cell().begin_parse();
+    ;;dump_stack();
+
+    return [function_selector, unsafe_tuple([msg_body]), get_prev_c4(), get_c7(), null()];
+}
+
+_ t5_owner2_send2(int exit_code, cell data, tuple stack, cell actions, int gas) method_id(13) {
+    throw_if(101, actions.cell_depth() != 0);
+    throw_if(exit_code, exit_code != 57);
+}
+
+
+
+[int, tuple, cell, tuple, int] t5_owner1_send1_data() method_id(14) {
+    ;; Funtion to run (recv_external)
+    int function_selector = -1;
+
+    int priv_key_1 = 0x239f2092ade534c52386513a896d301881c1bd12614fc232d00bf281e37932db;
+    int pub_key_1 = 0x27954a84e5329d47303740575ad34a7b5eca93a686768fc4e3661939db179338;
+
+    int priv_key_2 = 0xd064408cb9fb2b3db6f91aa69c193ebe7ec8ff57fc0519b966aa27abc10cfb48;
+    int pub_key_2 = 0x17dc8c126188f45b6d4bc3662c35ac2b800fd5eac772be813253baee0d9a9078;
+
+    cell msg_to_send = begin_cell()
+        .store_uint(0x10, 6)
+        .store_slice(my_address())
+        .store_coins(0)
+        .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
+        .store_uint(666, 32)
+        .end_cell();
+    ;;dump_stack();
+
+    int valid_until = 0{-valid_until-};
+    cell request = begin_cell()     ;; request:^Request
+        .store_uint(valid_until, 32) ;;   valid_until (now())
+        .store_uint(64, 8)          ;;   mode
+        .store_ref(msg_to_send)     ;;   msg_to_send:^Cell (for send_raw_message)
+        .end_cell();
+    ;;valid_until~dump();
+    ;;request~dump();
+
+    slice signature = begin_cell()
+        .store_uint(0{-test2-key1-signature1-}, 256)
+        .store_uint(0{-test2-key1-signature2-}, 256)
+        .end_cell().begin_parse();
+    ;;dump_stack();
+
+    slice msg_body = begin_cell()
+        .store_uint(pub_key_1, 256) ;; public_key
+        .store_slice(signature)     ;; signature
+        .store_ref(request)         ;; request
+    .end_cell().begin_parse();
+    ;;dump_stack();
+
+    return [function_selector, unsafe_tuple([msg_body]), get_prev_c4(), get_c7(), null()];
+}
+
+_ t5_owner1_send1(int exit_code, cell data, tuple stack, cell actions, int gas) method_id(15) {
+    throw_if(101, actions.cell_depth() == 0);
+    throw_if(exit_code, exit_code != 0);
+}
+
+
+
+[int, tuple, cell, tuple, int] t5_owner1_send2_data() method_id(16) {
+    ;; Funtion to run (recv_external)
+    int function_selector = -1;
+
+    int priv_key_1 = 0x239f2092ade534c52386513a896d301881c1bd12614fc232d00bf281e37932db;
+    int pub_key_1 = 0x27954a84e5329d47303740575ad34a7b5eca93a686768fc4e3661939db179338;
+
+    int priv_key_2 = 0xd064408cb9fb2b3db6f91aa69c193ebe7ec8ff57fc0519b966aa27abc10cfb48;
+    int pub_key_2 = 0x17dc8c126188f45b6d4bc3662c35ac2b800fd5eac772be813253baee0d9a9078;
+
+    cell msg_to_send = begin_cell()
+        .store_uint(0x10, 6)
+        .store_slice(my_address())
+        .store_coins(0)
+        .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
+        .store_uint(999, 32)
+        .end_cell();
+    ;;dump_stack();
+
+    int valid_until = 0{-valid_until-};
+    cell request = begin_cell()     ;; request:^Request
+        .store_uint(valid_until, 32) ;;   valid_until (now())
+        .store_uint(64, 8)          ;;   mode
+        .store_ref(msg_to_send)     ;;   msg_to_send:^Cell (for send_raw_message)
+        .end_cell();
+    ;;valid_until~dump();
+    ;;request~dump();
+
+    slice signature = begin_cell()
+        .store_uint(0{-test3-key1-signature1-}, 256)
+        .store_uint(0{-test3-key1-signature2-}, 256)
+        .end_cell().begin_parse();
+    ;;dump_stack();
+
+    slice msg_body = begin_cell()
+        .store_uint(pub_key_1, 256) ;; public_key
+        .store_slice(signature)     ;; signature
+        .store_ref(request)         ;; request
+    .end_cell().begin_parse();
+    ;;dump_stack();
+
+    return [function_selector, unsafe_tuple([msg_body]), get_prev_c4(), get_c7(), null()];
+}
+
+_ t5_owner1_send2(int exit_code, cell data, tuple stack, cell actions, int gas) method_id(17) {
+    throw_if(101, actions.cell_depth() == 0);
+    throw_if(exit_code, exit_code != 0);
+}
+
+
+
+[int, tuple, cell, tuple, int] t5_valid_after_data() method_id(18) {
     ;; Funtion to run (recv_external)
     int function_selector = -1;
 
@@ -382,13 +523,13 @@ _ t5_skip_3(int exit_code, cell data, tuple stack, cell actions, int gas) method
     return [function_selector, unsafe_tuple([msg_body]), get_prev_c4(), get_c7(), null()];
 }
 
-_ t5_valid_after(int exit_code, cell data, tuple stack, cell actions, int gas) method_id(17) {
+_ t5_valid_after(int exit_code, cell data, tuple stack, cell actions, int gas) method_id(19) {
     throw_if(exit_code, exit_code != 60);
 }
 
 
 
-[int, tuple, cell, tuple, int] t5_valid_before_data() method_id(18) {
+[int, tuple, cell, tuple, int] t5_valid_before_data() method_id(20) {
     ;; Funtion to run (recv_external)
     int function_selector = -1;
 
@@ -407,30 +548,8 @@ _ t5_valid_after(int exit_code, cell data, tuple stack, cell actions, int gas) m
     return [function_selector, unsafe_tuple([msg_body]), get_prev_c4(), get_c7(), null()];
 }
 
-_ t5_valid_before(int exit_code, cell data, tuple stack, cell actions, int gas) method_id(19) {
+_ t5_valid_before(int exit_code, cell data, tuple stack, cell actions, int gas) method_id(21) {
     throw_if(exit_code, exit_code != 61);
-}
-
-
-
-
-[int, tuple, cell, tuple, int] t5_owner_not_found_data() method_id(20) {
-    ;; Funtion to run (recv_external)
-    int function_selector = -1;
-
-    slice msg_body = begin_cell()
-        .store_uint(0, 256)         ;; public_key
-        .store_uint(0, 256)         ;; signature part 1
-        .store_uint(0, 256)         ;; signature part 2
-        .store_ref(begin_cell().end_cell())         ;; request
-    .end_cell().begin_parse();
-    ;;dump_stack();
-
-    return [function_selector, unsafe_tuple([msg_body]), get_prev_c4(), get_c7(), null()];
-}
-
-_ t5_owner_not_found(int exit_code, cell data, tuple stack, cell actions, int gas) method_id(21) {
-    throw_if(exit_code, exit_code != 62);
 }
 
 
@@ -456,17 +575,47 @@ _ t5_over_attempts(int exit_code, cell data, tuple stack, cell actions, int gas)
 
 
 
+[int, tuple, cell, tuple, int] t5_owner_not_found_data() method_id(24) {
+    ;; Funtion to run (recv_external)
+    int function_selector = -1;
+
+    slice msg_body = begin_cell()
+        .store_uint(0, 256)         ;; public_key
+        .store_uint(0, 256)         ;; signature part 1
+        .store_uint(0, 256)         ;; signature part 2
+        .store_ref(begin_cell().end_cell())         ;; request
+    .end_cell().begin_parse();
+    ;;dump_stack();
+
+    cell data = cell data = begin_cell()
+        .store_uint(1, 256)    ;; public key 1
+        .store_uint(2, 256)    ;; public key 2
+        .store_uint(0, 8)      ;; count of recv_external
+        .store_uint(now(), 32)     ;; last recv_external
+        .store_dict(new_dict())             ;; dict of requests
+      .end_cell();
+
+    return [function_selector, unsafe_tuple([msg_body]), data, get_c7(), null()];
+}
+
+_ t5_owner_not_found(int exit_code, cell data, tuple stack, cell actions, int gas) method_id(25) {
+    throw_if(exit_code, exit_code != 62);
+}
+
+
+
 {-
-INFO: Test [t5_init] status: [SUCCESS] Gas used: [1455]
-INFO: Test [t5_owner1_sending] status: [SUCCESS] Gas used: [6057]
-INFO: Test [t5_owner1_resending] status: [SUCCESS] Gas used: [6322]
-INFO: Test [t5_owner2_sending] status: [SUCCESS] Gas used: [6991]
-INFO: Test [t5_owner2_resending] status: [SUCCESS] Gas used: [6281]
-INFO: Test [t5_skip_1] status: [SUCCESS] Gas used: [2797]
-INFO: Test [t5_skip_2] status: [SUCCESS] Gas used: [2797]
-INFO: Test [t5_skip_3] status: [SUCCESS] Gas used: [2797]
-INFO: Test [t5_valid_after] status: [SUCCESS] Gas used: [3330]
-INFO: Test [t5_valid_before] status: [SUCCESS] Gas used: [3330]
-INFO: Test [t5_owner_not_found] status: [SUCCESS] Gas used: [2797]
-INFO: Test [t5_over_attempts] status: [SUCCESS] Gas used: [1183]
+INFO: Test [t5_init] status: [SUCCESS] Gas used: [1199]
+INFO: Test [t5_owner1_sending] status: [SUCCESS] Gas used: [5391]
+INFO: Test [t5_owner1_resending] status: [SUCCESS] Gas used: [5648]
+INFO: Test [t5_owner2_sending] status: [SUCCESS] Gas used: [6466]
+INFO: Test [t5_owner2_resending] status: [SUCCESS] Gas used: [5573]
+INFO: Test [t5_owner2_send1] status: [SUCCESS] Gas used: [6619]
+INFO: Test [t5_owner2_send2] status: [SUCCESS] Gas used: [6619]
+INFO: Test [t5_owner1_send1] status: [SUCCESS] Gas used: [7613]
+INFO: Test [t5_owner1_send2] status: [SUCCESS] Gas used: [6988]
+INFO: Test [t5_valid_after] status: [SUCCESS] Gas used: [2836]
+INFO: Test [t5_valid_before] status: [SUCCESS] Gas used: [2836]
+INFO: Test [t5_over_attempts] status: [SUCCESS] Gas used: [894]
+INFO: Test [t5_owner_not_found] status: [SUCCESS] Gas used: [2369]
 -}

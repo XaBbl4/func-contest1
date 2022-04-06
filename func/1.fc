@@ -14,6 +14,7 @@ If the body of the incoming message is less than 32 bits then it should throw AN
 
 -}
 
+
 ;; testable
 () recv_internal(slice in_msg_body) {
   throw_if(63, in_msg_body.slice_bits() < 32);

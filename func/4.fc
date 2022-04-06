@@ -30,7 +30,6 @@ TASK 4 - HASHMAP STORAGE.
 -}
 
 
-
 ;; testable
 () recv_internal(slice in_msg_body) {
     int op = in_msg_body~load_uint(32);
@@ -46,7 +45,7 @@ TASK 4 - HASHMAP STORAGE.
 
     if (op == 1) { ;; add new entry
         int key = in_msg_body~load_uint(256);
-        ;;int valid_until = in_msg_body~load_uint(64);
+        ;;int valid_until = in_msg_body~load_uint(64);  ;; not use for this `op`
         slice value = in_msg_body;
 
         data_dict~udict_set(256, key, value);

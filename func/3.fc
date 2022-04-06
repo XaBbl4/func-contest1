@@ -30,24 +30,6 @@ The initial address memorizer storage contains Manager address immediately follo
 
 int equal_slices (slice a, slice b) asm "SDEQ";
 
-{-
-(slice, slice) load_data () {
-  var ds = get_data().begin_parse();
-  return (ds~load_msg_addr(), ds~load_msg_addr());
-}
-
-() save_data (slice manager_address, slice memorized_address) impure {
-  set_data(begin_cell().store_slice(manager_address).store_slice(memorized_address).end_cell());
-}
-
-;; Parse sender address from incoming message
-(slice, int) parse_sender_address (cell in_msg_full) {
-  var cs = in_msg_full.begin_parse();
-  var flags = cs~load_uint(4);
-  slice sender_address = cs~load_msg_addr();
-  return (sender_address, flags);
-}
--}
 
 ;; testable
 () recv_internal (cell in_msg_full, slice in_msg_body) {
@@ -80,11 +62,12 @@ int equal_slices (slice a, slice b) asm "SDEQ";
     if ((op == 1) & equal_slices(manager_address, sender_address)) {
       var query_address = in_msg_body~load_msg_addr();
 
-      ;;save_data(manager_address, query_address);
-      set_data(begin_cell().store_slice(manager_address).store_slice(query_address).end_cell());
+      set_data(begin_cell()
+        .store_slice(manager_address)
+        .store_slice(query_address)
+        .end_cell());
     } else {
       throw(63);
     }
   }
-
 }

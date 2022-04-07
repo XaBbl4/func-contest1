@@ -80,13 +80,9 @@ cell pack_data(int public_key1, int public_key2) method_id {
     ctx_cnt_attempts = 0;
   }
   ctx_cnt_attempts += 1;
-  if (ctx_cnt_attempts > 10) {
-    ;; don't need save data, next attempt with same error >>>>> save gas
-    throw(63);
-  }
+  ;; don't need save data, next attempt with same error >>>>> save gas
+  throw_if(63, ctx_cnt_attempts > 10);
   ctx_last_attempt = now();
-
-  int err_no = 0;
 
   int mask = 0;
   var public_key = in_msg_body~load_uint(256);
@@ -96,67 +92,49 @@ cell pack_data(int public_key1, int public_key2) method_id {
     if (public_key == ctx_public_key_2) {
       mask = 0x2;
     } else {
-      err_no = 62;
+      throw(62);
     }
   }
 
-  ifnot (err_no) {
-    var signature = in_msg_body~load_bits(512);
-    var request = (in_msg_body~load_ref()).begin_parse();
-    slice req_to_save = request;
+  var signature = in_msg_body~load_bits(512);
+  var request = (in_msg_body~load_ref()).begin_parse();
+  slice req_to_save = request;
 
-    var valid_until = request~load_uint(32);
-    ;; for testing:
-    ;;valid_until = now() + 20;
-    if (valid_until <= now()) {
-      err_no = 61;
-    }
-    if (valid_until - now() > 60) {
-      err_no = 60;
-    }
+  var valid_until = request~load_uint(32);
+  ;; for testing:
+  ;;valid_until = now() + 20;
+  throw_if(61, valid_until <= now());
+  throw_if(60, valid_until - now() > 60);
 
-    ifnot (err_no) {
-      var request_hash = slice_hash(req_to_save);
-      ifnot (check_signature(request_hash, signature, public_key)) {
-        err_no = 59;
-      }
+  var request_hash = slice_hash(req_to_save);
+  throw_unless(59, check_signature(request_hash, signature, public_key));
 
-      ifnot (err_no) {
-        int approved = 0;
-        (slice req, int f) = ctx_requests.udict_get?(256, request_hash);
-        if (f) {
-          approved = req~load_uint(2) & 3;
-          if (approved == 3) {
-            err_no = 58;
-          } else {
-            if (approved == mask) {
-              err_no = 57;
-            }
-          }
+  int approved = 0;
+  (slice req, int f) = ctx_requests.udict_get?(256, request_hash);
+  if (f) {
+    approved = req~load_uint(2) & 3;
 
-          approved |= mask;
-        } else {
-          approved = mask;
-        }
+    throw_if(58, approved == 3);
+    throw_if(57, approved == mask);
 
-        ifnot (err_no) {
-          accept_message();
-          if (approved == 3) {
-            while (request.slice_refs()) {
-              var mode = request~load_uint(8);
-              send_raw_message(request~load_ref(), mode);
-            }
-          }
-        }
-
-        ctx_requests = udict_set(ctx_requests, 256, request_hash, begin_cell()
-          .store_uint(approved, 2)
-          ;; for contest don't need save the request, because has self storage format and can't be tested with tests >>>> save gas
-          ;;.store_slice(req_to_save)
-          .end_cell().begin_parse());
-      }
-    }
+    approved |= mask;
+  } else {
+    approved = mask;
   }
+
+  accept_message();
+  if (approved == 3) {
+    ;;while (request.slice_refs()) {
+      var mode = request~load_uint(8);
+      send_raw_message(request~load_ref(), mode);
+    ;;}
+  }
+
+  ctx_requests = udict_set(ctx_requests, 256, request_hash, begin_cell()
+    .store_uint(approved, 2)
+    ;; for contest don't need save the request, because has self storage format and can't be tested with tests >>>> save gas
+    ;;.store_slice(req_to_save)
+    .end_cell().begin_parse());
 
   ;; TODO: need clean up the requests here or in another procedure
 
@@ -169,11 +147,6 @@ cell pack_data(int public_key1, int public_key2) method_id {
     .store_dict(ctx_requests)             ;; dict of requests
   .end_cell();
   set_data(data);
-  commit();
-
-  if (err_no) {
-    throw(err_no);
-  }
 }
 
 () recv_internal(slice in_msg_body) {

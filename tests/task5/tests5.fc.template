@@ -97,8 +97,8 @@ _ t5_init(int exit_code, cell data, tuple stack, cell actions, int gas) method_i
 }
 
 _ t5_owner1_sending(int exit_code, cell data, tuple stack, cell actions, int gas) method_id(3) {
-    throw_if(101, actions.cell_depth() != 0); ;; actions is empty
     throw_if(100 + exit_code, exit_code != 0);
+    throw_if(101, actions.cell_depth() != 0); ;; actions is empty
 {-
     int priv_key_1 = 0x239f2092ade534c52386513a896d301881c1bd12614fc232d00bf281e37932db;
     int pub_key_1 = 0x27954a84e5329d47303740575ad34a7b5eca93a686768fc4e3661939db179338;
@@ -174,8 +174,8 @@ _ t5_owner1_sending(int exit_code, cell data, tuple stack, cell actions, int gas
 }
 
 _ t5_owner1_resending(int exit_code, cell data, tuple stack, cell actions, int gas) method_id(5) {
-    throw_if(101, actions.cell_depth() != 0); ;; actions is empty
     throw_if(100 + exit_code, exit_code != 57);
+    throw_if(101, actions.cell_depth() != 0); ;; actions is empty
 
     {-
     var d = data.begin_parse();
@@ -243,8 +243,8 @@ _ t5_owner1_resending(int exit_code, cell data, tuple stack, cell actions, int g
 }
 
 _ t5_owner2_sending(int exit_code, cell data, tuple stack, cell actions, int gas) method_id(7) {
-    throw_if(101, actions.cell_depth() == 0); ;; actions is not empty
     throw_if(100 + exit_code, exit_code != 0);
+    throw_if(101, actions.cell_depth() == 0); ;; actions is not empty
 }
 
 
@@ -294,8 +294,8 @@ _ t5_owner2_sending(int exit_code, cell data, tuple stack, cell actions, int gas
 }
 
 _ t5_owner2_resending(int exit_code, cell data, tuple stack, cell actions, int gas) method_id(9) {
-    throw_if(101, actions.cell_depth() != 0); ;; actions is empty
     throw_if(100 + exit_code, exit_code != 58);
+    throw_if(101, actions.cell_depth() != 0); ;; actions is empty
 }
 
 
@@ -345,8 +345,8 @@ _ t5_owner2_resending(int exit_code, cell data, tuple stack, cell actions, int g
 }
 
 _ t5_owner2_send1(int exit_code, cell data, tuple stack, cell actions, int gas) method_id(11) {
-    throw_if(101, actions.cell_depth() != 0);
     throw_if(100 + exit_code, exit_code != 0);
+    throw_if(101, actions.cell_depth() != 0);
 }
 
 
@@ -396,8 +396,8 @@ _ t5_owner2_send1(int exit_code, cell data, tuple stack, cell actions, int gas) 
 }
 
 _ t5_owner2_send2(int exit_code, cell data, tuple stack, cell actions, int gas) method_id(13) {
-    throw_if(101, actions.cell_depth() != 0);
     throw_if(100 + exit_code, exit_code != 0);
+    throw_if(101, actions.cell_depth() != 0);
 }
 
 
@@ -447,8 +447,8 @@ _ t5_owner2_send2(int exit_code, cell data, tuple stack, cell actions, int gas) 
 }
 
 _ t5_owner1_send1(int exit_code, cell data, tuple stack, cell actions, int gas) method_id(15) {
-    throw_if(101, actions.cell_depth() == 0);
     throw_if(100 + exit_code, exit_code != 0);
+    throw_if(101, actions.cell_depth() == 0);
 }
 
 
@@ -498,8 +498,8 @@ _ t5_owner1_send1(int exit_code, cell data, tuple stack, cell actions, int gas) 
 }
 
 _ t5_owner1_send2(int exit_code, cell data, tuple stack, cell actions, int gas) method_id(17) {
-    throw_if(101, actions.cell_depth() == 0);
     throw_if(100 + exit_code, exit_code != 0);
+    throw_if(101, actions.cell_depth() == 0);
 }
 
 

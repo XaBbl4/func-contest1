@@ -554,28 +554,7 @@ _ t5_valid_before(int exit_code, cell data, tuple stack, cell actions, int gas) 
 
 
 
-[int, tuple, cell, tuple, int] t5_over_attempts_data() method_id(22) {
-    ;; Funtion to run (recv_external)
-    int function_selector = -1;
-
-    slice msg_body = begin_cell()
-        .store_uint(0, 256)         ;; public_key
-        .store_uint(0, 256)         ;; signature part 1
-        .store_uint(0, 256)         ;; signature part 2
-        .store_ref(begin_cell().end_cell())         ;; request
-    .end_cell().begin_parse();
-    ;;dump_stack();
-
-    return [function_selector, unsafe_tuple([msg_body]), get_prev_c4(), get_c7(), null()];
-}
-
-_ t5_over_attempts(int exit_code, cell data, tuple stack, cell actions, int gas) method_id(23) {
-    throw_if(100 + exit_code, exit_code != 63);
-}
-
-
-
-[int, tuple, cell, tuple, int] t5_over_attempts2_data() method_id(24) {
+[int, tuple, cell, tuple, int] t5_owner_not_found_data() method_id(22) {
     ;; Funtion to run (recv_external)
     int function_selector = -1;
 
@@ -590,70 +569,13 @@ _ t5_over_attempts(int exit_code, cell data, tuple stack, cell actions, int gas)
     cell data = cell data = begin_cell()
         .store_uint(1, 256)    ;; public key 1
         .store_uint(2, 256)    ;; public key 2
-        .store_uint(10, 8)      ;; count of recv_external
-        .store_uint(now() - 60, 32)     ;; last recv_external
         .store_dict(new_dict())             ;; dict of requests
       .end_cell();
 
     return [function_selector, unsafe_tuple([msg_body]), data, get_c7(), null()];
 }
 
-_ t5_over_attempts2(int exit_code, cell data, tuple stack, cell actions, int gas) method_id(25) {
-    throw_if(100 + exit_code, exit_code != 63);
-}
-
-
-
-[int, tuple, cell, tuple, int] t5_over_attempts3_data() method_id(26) {
-    ;; Funtion to run (recv_external)
-    int function_selector = -1;
-
-    slice msg_body = begin_cell()
-        .store_uint(0, 256)         ;; public_key
-    .end_cell().begin_parse();
-    ;;dump_stack();
-
-    cell data = cell data = begin_cell()
-        .store_uint(1, 256)    ;; public key 1
-        .store_uint(2, 256)    ;; public key 2
-        .store_uint(10, 8)      ;; count of recv_external
-        .store_uint(now() - 61, 32)     ;; last recv_external
-        .store_dict(new_dict())             ;; dict of requests
-      .end_cell();
-
-    return [function_selector, unsafe_tuple([msg_body]), data, get_c7(), null()];
-}
-
-_ t5_over_attempts3(int exit_code, cell data, tuple stack, cell actions, int gas) method_id(27) {
-    throw_if(100 + exit_code, exit_code != 62);
-}
-
-
-
-[int, tuple, cell, tuple, int] t5_owner_not_found_data() method_id(28) {
-    ;; Funtion to run (recv_external)
-    int function_selector = -1;
-
-    slice msg_body = begin_cell()
-        .store_uint(0, 256)         ;; public_key
-        .store_uint(0, 256)         ;; signature part 1
-        .store_uint(0, 256)         ;; signature part 2
-        .store_ref(begin_cell().end_cell())         ;; request
-    .end_cell().begin_parse();
-    ;;dump_stack();
-
-    cell data = cell data = begin_cell()
-        .store_uint(1, 256)    ;; public key 1
-        .store_uint(2, 256)    ;; public key 2
-        .store_uint(0, 8)      ;; count of recv_external
-        .store_uint(now(), 32)     ;; last recv_external
-        .store_dict(new_dict())             ;; dict of requests
-      .end_cell();
-
-    return [function_selector, unsafe_tuple([msg_body]), data, get_c7(), null()];
-}
-
-_ t5_owner_not_found(int exit_code, cell data, tuple stack, cell actions, int gas) method_id(29) {
+_ t5_owner_not_found(int exit_code, cell data, tuple stack, cell actions, int gas) method_id(23) {
     throw_if(100 + exit_code, exit_code != 62);
 }
 
@@ -671,8 +593,5 @@ INFO: Test [t5_owner1_send1] status: [SUCCESS] Gas used: [7073]
 INFO: Test [t5_owner1_send2] status: [SUCCESS] Gas used: [7698]
 INFO: Test [t5_valid_after] status: [SUCCESS] Gas used: [2836]
 INFO: Test [t5_valid_before] status: [SUCCESS] Gas used: [2836]
-INFO: Test [t5_over_attempts] status: [SUCCESS] Gas used: [894]
-INFO: Test [t5_over_attempts2] status: [SUCCESS] Gas used: [894]
-INFO: Test [t5_over_attempts3] status: [SUCCESS] Gas used: [2410]
 INFO: Test [t5_owner_not_found] status: [SUCCESS] Gas used: [2369]
 -}
